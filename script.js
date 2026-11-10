@@ -22,9 +22,12 @@ $('themeBtn')?.addEventListener('click', () => {
    Everything runs through one quiet master bus with a compressor and a
    small generated "room" reverb, so sounds blend instead of clicking. */
 const sfx = (() => {
-  let ctx = null, noise = null, bus = null, voices = 0;
+  let ctx = null, noise = null, bus = null, master = null, voices = 0;
+  // volume 0..10 (7 = the original loudness); remembered between visits
+  let level = Math.min(10, Math.max(0, parseInt(store.get('volume') ?? '7', 10) || 0));
+  const gainFor = l => l <= 0 ? 0 : 1.35 * Math.pow(l / 7, 1.6);
   const MAX_VOICES = 6;
-  const enabled = () => root.dataset.sound !== 'off';
+  const enabled = () => root.dataset.sound !== 'off' && level > 0;
 
   // Browsers only allow sound after the visitor clicks, taps or presses a key
   // (scrolling doesn't count). We set the engine up straight away anyway, so
@@ -45,7 +48,7 @@ const sfx = (() => {
     // master: bus -> compressor -> volume -> speakers, plus a reverb send
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -20; comp.ratio.value = 4;
-    const master = ctx.createGain(); master.gain.value = 1.35;
+    master = ctx.createGain(); master.gain.value = gainFor(level);
     bus = ctx.createGain();
     bus.connect(comp).connect(master).connect(ctx.destination);
 
@@ -109,6 +112,12 @@ const sfx = (() => {
   let drone = null;
   return {
     unlock,
+    get volume() { return level; },
+    setVolume(l) {
+      level = Math.min(10, Math.max(0, Math.round(l)));
+      store.set('volume', String(level));
+      if (master) master.gain.setTargetAtTime(gainFor(level), ctx.currentTime, 0.02);
+    },
     key() {
       if (!ready()) return;
       burst({ freq: 1800 + Math.random() * 1600, q: 2.5, dur: 0.022, gain: 0.06 });
@@ -330,9 +339,86 @@ function toggleSound() {
   store.set('sound', off ? 'off' : 'on');
   syncSoundLabel();
 }
-$('soundBtn')?.addEventListener('click', toggleSound);
-soundText?.addEventListener('click', toggleSound);
+soundText?.addEventListener('click', () => { toggleSound(); syncVolume(); });
 syncSoundLabel();
+
+/* ---------- Volume card ----------
+   The speaker icon opens a small card: ten ink strokes (like the grass
+   banner) rising in height. Click or drag across them to set the volume;
+   each step plays a bubble at that volume and pitch, so you hear it as you go. */
+const STEPS = 10;
+let syncVolume = () => {};
+(() => {
+  const btn = $('soundBtn');
+  if (!btn) return;
+  const wrap = document.createElement('span');
+  wrap.className = 'vol-wrap';
+  btn.replaceWith(wrap);
+  wrap.appendChild(btn);
+  btn.setAttribute('aria-haspopup', 'true');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-label', 'Sound volume');
+
+  const card = document.createElement('div');
+  card.className = 'vol-card';
+  card.hidden = true;
+  card.innerHTML = `
+    <div class="vol-top"><span class="vol-label mono">volume</span><span class="vol-num" aria-hidden="true"></span></div>
+    <div class="vol-bars" role="slider" tabindex="0" aria-label="volume" aria-valuemin="0" aria-valuemax="${STEPS}">
+      ${Array.from({ length: STEPS }, (_, i) => `<i style="--h:${30 + i * 7}%"></i>`).join('')}
+    </div>
+    <div class="vol-foot"><button type="button" class="vol-mute mono"></button><span class="vol-hint mono">drag across</span></div>`;
+  wrap.appendChild(card);
+  const bars = card.querySelector('.vol-bars'), strokes = [...bars.children];
+  const num = card.querySelector('.vol-num'), mute = card.querySelector('.vol-mute');
+
+  syncVolume = () => {
+    const muted = root.dataset.sound === 'off', v = sfx.volume;
+    strokes.forEach((s, i) => s.classList.toggle('on', !muted && i < v));
+    num.textContent = muted ? 'muted' : v === 0 ? 'silent' : `${v}/${STEPS}`;
+    bars.setAttribute('aria-valuenow', v);
+    bars.setAttribute('aria-valuetext', muted ? 'muted' : `${v} of ${STEPS}`);
+    mute.textContent = muted ? 'unmute' : 'mute';
+    root.dataset.vol = muted || v === 0 ? 'off' : 'on';   // speaker icon shows muted when silent
+  };
+
+  function set(v, sound = true) {
+    v = Math.min(STEPS, Math.max(0, v));
+    if (root.dataset.sound === 'off') { delete root.dataset.sound; store.set('sound', 'on'); syncSoundLabel(); }  // turning it up unmutes
+    if (v === sfx.volume && sound) return;
+    sfx.setVolume(v);
+    syncVolume();
+    const s = strokes[v - 1];
+    if (s) { s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); }
+    if (sound && v > 0) { sfx.unlock(); sfx.bubble(v - 1); }
+  }
+  const levelAt = x => {
+    const r = bars.getBoundingClientRect();
+    return Math.round(Math.min(1, Math.max(0, (x - r.left) / r.width)) * STEPS);
+  };
+  let dragging = false;
+  bars.addEventListener('pointerdown', e => { dragging = true; bars.setPointerCapture(e.pointerId); set(levelAt(e.clientX)); });
+  bars.addEventListener('pointermove', e => { if (dragging) set(levelAt(e.clientX)); });
+  bars.addEventListener('pointerup', () => (dragging = false));
+  bars.addEventListener('pointercancel', () => (dragging = false));
+  bars.addEventListener('keydown', e => {
+    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (d) { e.preventDefault(); set(sfx.volume + d); }
+    if (e.key === 'Home') { e.preventDefault(); set(0); }
+    if (e.key === 'End') { e.preventDefault(); set(STEPS); }
+  });
+  mute.addEventListener('click', () => { toggleSound(); syncVolume(); });
+
+  function open(show) {
+    card.hidden = !show;
+    btn.setAttribute('aria-expanded', String(show));
+    if (show) { syncVolume(); card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); }
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); sfx.unlock(); open(card.hidden); if (!card.hidden) bars.focus({ preventScroll: true }); });
+  document.addEventListener('pointerdown', e => { if (!card.hidden && !wrap.contains(e.target)) open(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !card.hidden) { open(false); btn.focus(); } });
+  syncVolume();
+})();
 
 /* ---------- Typing ---------- */
 function typeInto(el, text, { speed = 55, onDone } = {}) {

@@ -49,3 +49,6 @@ Note: when you open the files straight from your computer (not through a host), 
 `/terminal` is a small macOS-style terminal. Commands live in the `COMMANDS` object in `terminal.js`. Add one like:
 `hobbies: { help: 'what i do for fun', run: () => 'your answer here' },`
 Commands without a `help` line still work but stay hidden from `help` (handy for easter eggs).
+
+## Volume
+The speaker icon opens a volume card: ten ink strokes, click or drag to set 0–10 (default 7), plus a mute button. It's remembered in the browser. In the terminal, `volume 0-10` does the same.

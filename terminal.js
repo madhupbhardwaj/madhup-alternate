@@ -101,6 +101,14 @@
       if (wantOff !== (root.dataset.sound === 'off')) toggleSound();
       return `sound: ${root.dataset.sound === 'off' ? 'off' : 'on'}`;
     } },
+    volume:   { help: 'set sound volume', args: '[0-10]', run: ([v]) => {
+      if (v === undefined) return `volume: ${sfx.volume}/10`;
+      const n = parseInt(v, 10);
+      if (isNaN(n) || n < 0 || n > 10) return html('<span class="err">volume: give a number from 0 to 10</span>');
+      sfx.setVolume(n); syncVolume();
+      if (n > 0) sfx.bubble(n - 1);
+      return `volume: ${n}/10`;
+    } },
     clear:    { help: 'clear the screen',             run: () => { out.innerHTML = ''; return null; } },
     me:       { help: 'go to the "me" page',          run: () => { go('/me'); return 'going to /me…'; } },
     home:     { help: 'back to the main page',        run: () => { go('/'); return 'going home…'; } },
