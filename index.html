@@ -6,77 +6,147 @@
 <title>Madhup Bhardwaj</title>
 <meta name="description" content="Madhup Bhardwaj — high school student in India who loves mathematics and builds small tools around how he learns.">
 <meta property="og:title" content="Madhup Bhardwaj">
-<meta property="og:description" content="Curiosity, made tangible. Math, tools, and ideas.">
+<meta property="og:description" content="curiosity, made tangible. math, tools, and ideas.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Architects+Daughter&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script>
-  // Apply saved theme before paint to avoid a flash.
-  try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  try {
+    var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t;
+    if (localStorage.getItem('sound') === 'off') document.documentElement.dataset.sound = 'off';
+  } catch (e) {}
 </script>
 </head>
 <body>
-<div class="wrap">
 
-  <header class="top">
-    <span><span class="dot" aria-hidden="true"></span>building things</span>
-    <span class="top-right">
-      <span>IN · <span id="year">2026</span></span>
-      <button id="theme" class="theme" type="button" aria-label="Toggle dark mode">◐</button>
-    </span>
-  </header>
-
-  <section class="hero">
-    <div>
-      <h1>Madhup Bhardwaj<span class="cursor" aria-hidden="true"></span></h1>
-      <p class="intro">High school student in India. <b>Mathematics</b> by heart, <b>software</b> by habit. I build small tools around how I learn, and share the ideas along the way.</p>
-      <p class="tagline">curiosity, made tangible.</p>
+<nav class="nav band">
+  <div class="col nav-inner">
+    <a href="#top" class="logo" data-sfx>m.</a>
+    <div class="nav-links">
+      <a href="#about" data-sfx>about</a>
+      <a href="#projects" data-sfx>projects</a>
+      <a href="#reading" data-sfx>reading</a>
+      <span class="sep" aria-hidden="true"></span>
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound" data-sfx>
+        <svg class="on" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        <svg class="off" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
+      </button>
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle dark mode" data-sfx>
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
     </div>
-  </section>
-
-  <h2 id="work">projects</h2>
-  <div class="table">
-    <a class="row" style="--c:var(--c1)" href="https://problemset.in" target="_blank" rel="noopener">
-      <span class="i"><i></i>01</span><span class="name">ProblemSet</span><span class="desc">Math practice, sorted by topic</span><span class="u">problemset.in ↗</span>
-    </a>
-    <a class="row" style="--c:var(--c2)" href="https://problemslate.vercel.app" target="_blank" rel="noopener">
-      <span class="i"><i></i>02</span><span class="name">ProblemSlate</span><span class="desc">Pen-first whiteboard for macOS + Windows</span><span class="u">desktop ↗</span>
-    </a>
-    <a class="row" style="--c:var(--c3)" href="https://mypapers-madhup.vercel.app" target="_blank" rel="noopener">
-      <span class="i"><i></i>03</span><span class="name">My Papers</span><span class="desc">Papers, proofs and ideas</span><span class="u">writing ↗</span>
-    </a>
-    <a class="row" style="--c:var(--c4)" href="https://classroll-sigma.vercel.app" target="_blank" rel="noopener">
-      <span class="i"><i></i>04</span><span class="name">ClassRoll</span><span class="desc">QR-code attendance, without the paper trail</span><span class="u">web app ↗</span>
-    </a>
-    <a class="row" style="--c:var(--c5)" href="https://tenbars.vercel.app" target="_blank" rel="noopener">
-      <span class="i"><i></i>05</span><span class="name">Tenbars</span><span class="desc">Find TV series, rate episodes out of ten</span><span class="u">web app ↗</span>
-    </a>
   </div>
+</nav>
 
-  <h2 id="about">about</h2>
-  <p class="body">I learn best by building. When a topic clicks, I want to make something out of it — a problem set, a whiteboard, a paper — so the idea has somewhere to live.</p>
-  <p class="body">Most of what I make starts as a tool for myself. Some of it turns out to be useful for others too. I'm still learning, and always building.</p>
+<header id="top" class="band hero-band">
+  <div class="col">
+    <div class="banner">
+      <canvas id="field" aria-label="An interactive flow field of coloured strokes"></canvas>
+      <span class="chip">01 · flow field</span>
+      <p class="note" aria-hidden="true">i coded this.<br>go on, poke it.
+        <svg viewBox="0 0 60 40"><path d="M55 6C40 10 22 20 8 32M8 32l2-10M8 32l10-2"/></svg>
+      </p>
+    </div>
 
-  <h2>reading</h2>
-  <dl class="kv">
-    <dt>Thompson</dt><dd>Calculus Made Easy</dd>
-    <dt>Jorgenson</dt><dd>The Almanack of Naval Ravikant</dd>
-    <dt>Cummings</dt><dd>Proofs</dd>
-  </dl>
+    <div class="profile">
+      <div class="avatar" aria-hidden="true"><span>mb</span></div>
+      <div>
+        <h1>madhup bhardwaj</h1>
+        <p class="sub mono"><span id="typed" data-text="curiosity, made tangible."></span><span class="caret" aria-hidden="true"></span></p>
+      </div>
+    </div>
 
-  <h2 id="contact">elsewhere</h2>
-  <dl class="kv">
-    <dt>github</dt><dd><a href="https://github.com/madhupbhardwaj" target="_blank" rel="noopener">madhupbhardwaj ↗</a></dd>
-    <dt>linkedin</dt><dd><a href="https://www.linkedin.com/in/madhup-bhardwaj/" target="_blank" rel="noopener">madhup-bhardwaj ↗</a></dd>
-  </dl>
+    <ul class="meta mono">
+      <li><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></svg>student, builds things on the side</li>
+      <li><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="clock">--:--</span><span class="dim" id="offset"></span></li>
+      <li><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>india</li>
+      <li><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l4-5 3 3 5-6"/></svg>mathematics, mostly</li>
+    </ul>
 
-  <footer>© <span id="year2">2026</span> Madhup Bhardwaj — handwritten html, no frameworks.</footer>
-</div>
+    <div class="pills">
+      <a class="pill" href="https://github.com/madhupbhardwaj" target="_blank" rel="noopener" data-sfx>
+        <svg viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2-6-2.5m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>github</a>
+      <a class="pill" href="https://www.linkedin.com/in/madhup-bhardwaj/" target="_blank" rel="noopener" data-sfx>
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17"/></svg>linkedin</a>
+      <a class="pill" href="https://problemset.in" target="_blank" rel="noopener" data-sfx>
+        <svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg>problemset<span class="ext">↗</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="band hatch" aria-hidden="true"><div class="col"></div></div>
+
+<section id="about" class="band">
+  <div class="col head"><h2 data-type>about</h2></div>
+</section>
+<div class="band"><div class="col body">
+  <p>i'm a high school student in india who loves mathematics. i learn best by building — when a topic clicks, i want to make something out of it: a problem set, a whiteboard, a paper. that way the idea has somewhere to live.</p>
+  <p>most of what i make starts as a tool for myself. some of it turns out to be useful for others too. still learning, always building.</p>
+</div></div>
+
+<div class="band hatch" aria-hidden="true"><div class="col"></div></div>
+
+<section id="projects" class="band">
+  <div class="col head"><h2 data-type>projects</h2><span class="count mono">05</span></div>
+</section>
+<div class="band"><div class="col">
+  <ul class="projects">
+    <li><a href="https://problemset.in" target="_blank" rel="noopener" style="--c:var(--c1)" data-sfx>
+      <span class="dot"></span>
+      <span class="p-main"><span class="p-name">problemset</span><span class="p-desc">practice problems, sorted by topic — number theory to calculus.</span></span>
+      <span class="p-url mono">problemset.in <i>↗</i></span></a></li>
+    <li><a href="https://problemslate.vercel.app" target="_blank" rel="noopener" style="--c:var(--c2)" data-sfx>
+      <span class="dot"></span>
+      <span class="p-main"><span class="p-name">problemslate</span><span class="p-desc">a focused, pen-first whiteboard for macos and windows.</span></span>
+      <span class="p-url mono">desktop <i>↗</i></span></a></li>
+    <li><a href="https://mypapers-madhup.vercel.app" target="_blank" rel="noopener" style="--c:var(--c3)" data-sfx>
+      <span class="dot"></span>
+      <span class="p-main"><span class="p-name">my papers</span><span class="p-desc">papers, proofs, and ideas — my mathematical writing.</span></span>
+      <span class="p-url mono">writing <i>↗</i></span></a></li>
+    <li><a href="https://classroll-sigma.vercel.app" target="_blank" rel="noopener" style="--c:var(--c4)" data-sfx>
+      <span class="dot"></span>
+      <span class="p-main"><span class="p-name">classroll</span><span class="p-desc">attendance without the paper trail. scan a qr, enter your pin, done.</span></span>
+      <span class="p-url mono">web app <i>↗</i></span></a></li>
+    <li><a href="https://tenbars.vercel.app" target="_blank" rel="noopener" style="--c:var(--c5)" data-sfx>
+      <span class="dot"></span>
+      <span class="p-main"><span class="p-name">tenbars</span><span class="p-desc">find tv series and rate every episode out of ten.</span></span>
+      <span class="p-url mono">web app <i>↗</i></span></a></li>
+  </ul>
+</div></div>
+
+<div class="band hatch" aria-hidden="true"><div class="col"></div></div>
+
+<section id="reading" class="band">
+  <div class="col head"><h2 data-type>on the shelf</h2></div>
+</section>
+<div class="band"><div class="col">
+  <ul class="books">
+    <li><span class="b-title">calculus made easy</span><span class="b-author mono">silvanus p. thompson</span></li>
+    <li><span class="b-title">the almanack of naval ravikant</span><span class="b-author mono">eric jorgenson</span></li>
+    <li><span class="b-title">proofs</span><span class="b-author mono">jay cummings</span></li>
+  </ul>
+</div></div>
+
+<div class="band hatch" aria-hidden="true"><div class="col"></div></div>
+
+<section class="band">
+  <div class="col head"><h2 data-type>say hi</h2></div>
+</section>
+<div class="band"><div class="col body">
+  <p>the easiest way to reach me is on <a class="ul" href="https://www.linkedin.com/in/madhup-bhardwaj/" target="_blank" rel="noopener" data-sfx>linkedin</a>. if you want to see how things are built, everything lives on <a class="ul" href="https://github.com/madhupbhardwaj" target="_blank" rel="noopener" data-sfx>github</a>.</p>
+</div></div>
+
+<footer class="band foot">
+  <div class="col mono">
+    <span>© <span id="year">2026</span> madhup bhardwaj · india</span>
+    <button id="soundText" class="ul linkish" type="button" data-sfx>sound on</button>
+  </div>
+</footer>
+
 <script src="script.js"></script>
 </body>
 </html>
