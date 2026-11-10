@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Madhup Bhardwaj</title>
+<meta name="description" content="Madhup Bhardwaj — high school student in India who loves mathematics and builds small tools around how he learns.">
+<meta property="og:title" content="Madhup Bhardwaj">
+<meta property="og:description" content="Curiosity, made tangible. Math, tools, and ideas.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  // Apply saved theme before paint to avoid a flash.
+  try { var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span><span class="dot" aria-hidden="true"></span>building things</span>
+    <span class="top-right">
+      <span>IN · <span id="year">2026</span></span>
+      <button id="theme" class="theme" type="button" aria-label="Toggle dark mode">◐</button>
+    </span>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Madhup Bhardwaj<span class="cursor" aria-hidden="true"></span></h1>
+      <p class="intro">High school student in India. <b>Mathematics</b> by heart, <b>software</b> by habit. I build small tools around how I learn, and share the ideas along the way.</p>
+      <p class="tagline">curiosity, made tangible.</p>
+    </div>
+  </section>
+
+  <h2 id="work">projects</h2>
+  <div class="table">
+    <a class="row" style="--c:var(--c1)" href="https://problemset.in" target="_blank" rel="noopener">
+      <span class="i"><i></i>01</span><span class="name">ProblemSet</span><span class="desc">Math practice, sorted by topic</span><span class="u">problemset.in ↗</span>
+    </a>
+    <a class="row" style="--c:var(--c2)" href="https://problemslate.vercel.app" target="_blank" rel="noopener">
+      <span class="i"><i></i>02</span><span class="name">ProblemSlate</span><span class="desc">Pen-first whiteboard for macOS + Windows</span><span class="u">desktop ↗</span>
+    </a>
+    <a class="row" style="--c:var(--c3)" href="https://mypapers-madhup.vercel.app" target="_blank" rel="noopener">
+      <span class="i"><i></i>03</span><span class="name">My Papers</span><span class="desc">Papers, proofs and ideas</span><span class="u">writing ↗</span>
+    </a>
+    <a class="row" style="--c:var(--c4)" href="https://classroll-sigma.vercel.app" target="_blank" rel="noopener">
+      <span class="i"><i></i>04</span><span class="name">ClassRoll</span><span class="desc">QR-code attendance, without the paper trail</span><span class="u">web app ↗</span>
+    </a>
+    <a class="row" style="--c:var(--c5)" href="https://tenbars.vercel.app" target="_blank" rel="noopener">
+      <span class="i"><i></i>05</span><span class="name">Tenbars</span><span class="desc">Find TV series, rate episodes out of ten</span><span class="u">web app ↗</span>
+    </a>
+  </div>
+
+  <h2 id="about">about</h2>
+  <p class="body">I learn best by building. When a topic clicks, I want to make something out of it — a problem set, a whiteboard, a paper — so the idea has somewhere to live.</p>
+  <p class="body">Most of what I make starts as a tool for myself. Some of it turns out to be useful for others too. I'm still learning, and always building.</p>
+
+  <h2>reading</h2>
+  <dl class="kv">
+    <dt>Thompson</dt><dd>Calculus Made Easy</dd>
+    <dt>Jorgenson</dt><dd>The Almanack of Naval Ravikant</dd>
+    <dt>Cummings</dt><dd>Proofs</dd>
+  </dl>
+
+  <h2 id="contact">elsewhere</h2>
+  <dl class="kv">
+    <dt>github</dt><dd><a href="https://github.com/madhupbhardwaj" target="_blank" rel="noopener">madhupbhardwaj ↗</a></dd>
+    <dt>linkedin</dt><dd><a href="https://www.linkedin.com/in/madhup-bhardwaj/" target="_blank" rel="noopener">madhup-bhardwaj ↗</a></dd>
+  </dl>
+
+  <footer>© <span id="year2">2026</span> Madhup Bhardwaj — handwritten html, no frameworks.</footer>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
