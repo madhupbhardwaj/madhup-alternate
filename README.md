@@ -5,7 +5,7 @@ My personal portfolio. Plain HTML, CSS and JavaScript, with no build step and no
 ```
 index.html    page content (edit projects, about, books, links here)
 style.css     all styling; colours are the variables at the top
-script.js     typing effect, sound effects, clock, dark mode, flow-field banner
+script.js     typing effect, sound effects, clock, dark mode, harmonograph banner
 favicon.svg   tab icon
 404.html      "page not found" page
 ```
@@ -25,4 +25,4 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 ## Customise
 - **Photo:** replace `<span>mb</span>` inside `.avatar` in `index.html` with `<img src="me.jpg" alt="">` and add `me.jpg` to the folder.
 - **Sounds:** generated in code with the Web Audio API (no audio files). Visitors can switch them off with the speaker icon or "sound on" in the footer. Browsers only allow sound after the first click/tap/keypress on the page.
-- **Banner:** click it to cycle colour palettes; move the mouse over it to stir the strokes.
+- **Banner:** a harmonograph — a pen tracing two combined waves. Drag left/right to pick a ratio (1:2 octave … 5:6 minor third), or click/tap for the next one. You hear the same two notes the curve is drawn from. The list of ratios is the `ratios` array in `script.js`.

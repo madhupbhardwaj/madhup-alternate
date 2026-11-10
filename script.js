@@ -17,9 +17,12 @@ document.getElementById('themeBtn').addEventListener('click', () => {
   store.set('theme', root.dataset.theme);
 });
 
-/* ---------- Sound (synthesised with Web Audio — no files) ---------- */
+/* ---------- Sound (synthesised with Web Audio — no files) ----------
+   Everything runs through one quiet master bus with a compressor and a
+   small generated "room" reverb, so sounds blend instead of clicking. */
 const sfx = (() => {
-  let ctx = null, noise = null;
+  let ctx = null, noise = null, bus = null, voices = 0;
+  const MAX_VOICES = 6;
   const enabled = () => root.dataset.sound !== 'off';
 
   function unlock() {
@@ -27,10 +30,27 @@ const sfx = (() => {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
-    // one second of white noise, reused for clicks and key taps
+
+    // white noise, reused for key taps
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noise.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+
+    // master: bus -> compressor -> volume -> speakers, plus a reverb send
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -20; comp.ratio.value = 4;
+    const master = ctx.createGain(); master.gain.value = 0.8;
+    bus = ctx.createGain();
+    bus.connect(comp).connect(master).connect(ctx.destination);
+
+    const len = ctx.sampleRate * 1.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const b = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++) b[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    }
+    const verb = ctx.createConvolver(); verb.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = 0.22;
+    bus.connect(verb).connect(wet).connect(comp);
   }
   ['pointerdown', 'keydown', 'touchstart'].forEach(e =>
     addEventListener(e, unlock, { passive: true }));
@@ -39,62 +59,96 @@ const sfx = (() => {
 
   function burst({ freq, q = 1, dur = 0.03, gain = 0.1, type = 'bandpass' }) {
     const t = ctx.currentTime;
-    const src = ctx.createBufferSource();
-    src.buffer = noise;
-    const f = ctx.createBiquadFilter();
-    f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const src = ctx.createBufferSource(); src.buffer = noise;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
     const g = ctx.createGain();
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(ctx.destination);
+    src.connect(f).connect(g).connect(bus);
     src.start(t, Math.random() * 0.9, dur + 0.02);
   }
   function tone(freq, { to = freq, dur = 0.06, gain = 0.08, type = 'sine', delay = 0 } = {}) {
     const t = ctx.currentTime + delay;
-    const o = ctx.createOscillator();
-    o.type = type;
+    const o = ctx.createOscillator(); o.type = type;
     o.frequency.setValueAtTime(freq, t);
     o.frequency.exponentialRampToValueAtTime(to, t + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(gain, t + 0.004);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(ctx.destination);
+    o.connect(g).connect(bus);
     o.start(t); o.stop(t + dur + 0.02);
   }
+  // Soft marimba-like note: fundamental + a quiet 4th harmonic, fast attack, gentle decay.
+  function mallet(freq, { gain = 0.09, dur = 1.4, delay = 0 } = {}) {
+    if (voices >= MAX_VOICES) return;
+    voices++;
+    const t = ctx.currentTime + delay;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(bus);
+    [[1, 1], [4, 0.12], [10, 0.02]].forEach(([mult, amp]) => {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = freq * mult;
+      const og = ctx.createGain(); og.gain.value = amp;
+      if (mult > 1) { og.gain.setValueAtTime(amp, t); og.gain.exponentialRampToValueAtTime(0.0001, t + dur / (mult * 0.8)); }
+      o.connect(og).connect(g); o.start(t); o.stop(t + dur + 0.05);
+    });
+    setTimeout(() => voices--, (delay + dur) * 1000);
+  }
 
+  let drone = null;
   return {
     unlock,
-    // typewriter-ish key tap
     key() {
       if (!ready()) return;
-      burst({ freq: 1800 + Math.random() * 1600, q: 2.5, dur: 0.022, gain: 0.07 });
-      burst({ freq: 180 + Math.random() * 60, q: 1, dur: 0.03, gain: 0.05, type: 'lowpass' });
+      burst({ freq: 1800 + Math.random() * 1600, q: 2.5, dur: 0.022, gain: 0.06 });
+      burst({ freq: 180 + Math.random() * 60, q: 1, dur: 0.03, gain: 0.04, type: 'lowpass' });
     },
-    // soft button click
     click() {
       if (!ready()) return;
-      tone(1100, { to: 700, dur: 0.045, gain: 0.07 });
-      burst({ freq: 3500, q: 1.5, dur: 0.015, gain: 0.05 });
+      tone(1100, { to: 700, dur: 0.045, gain: 0.06 });
     },
-    // barely-there tick on hover
     hover() {
       if (!ready()) return;
-      burst({ freq: 4200, q: 3, dur: 0.012, gain: 0.018 });
+      burst({ freq: 4200, q: 3, dur: 0.012, gain: 0.015 });
     },
-    // little two-note chime
     chime(up = true) {
       if (!ctx) return;
-      const [a, b] = up ? [660, 990] : [990, 660];
-      tone(a, { dur: 0.09, gain: 0.06, type: 'triangle' });
-      tone(b, { dur: 0.14, gain: 0.06, type: 'triangle', delay: 0.07 });
+      const [a, b] = up ? [659.25, 987.77] : [987.77, 659.25];
+      mallet(a, { gain: 0.07, dur: 0.8 });
+      mallet(b, { gain: 0.07, dur: 1.0, delay: 0.08 });
     },
-    // pluck for the canvas
-    pluck() {
+    // Two notes in the ratio a:b, struck together, then a quiet sustained
+    // hum of the same interval that fades out over `hold` seconds.
+    interval(a, b, hold = 10) {
       if (!ready()) return;
-      const notes = [523.25, 587.33, 659.25, 783.99, 880];
-      tone(notes[Math.floor(Math.random() * notes.length)], { dur: 0.35, gain: 0.05, type: 'triangle' });
+      const base = 196 * (a <= 2 ? 1.5 : 1); // keep every interval in a comfy range
+      const f1 = base, f2 = base * b / a;
+      mallet(f1, { gain: 0.08, dur: 1.8 });
+      mallet(f2, { gain: 0.07, dur: 1.8, delay: 0.09 });
+      this.stopDrone();
+      const t = ctx.currentTime;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.025, t + 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + hold);
+      g.connect(bus);
+      const oscs = [f1, f2].map(f => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + hold + 0.1); return o; });
+      drone = { g, oscs };
     },
+    stopDrone() {
+      if (!drone || !ctx) return;
+      const t = ctx.currentTime;
+      drone.g.gain.cancelScheduledValues(t);
+      drone.g.gain.setValueAtTime(Math.max(drone.g.gain.value, 0.0001), t);
+      drone.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      drone.oscs.forEach(o => { try { o.stop(t + 0.3); } catch (e) {} });
+      drone = null;
+    },
+    // light tick while dragging between ratios
+    notch() { if (ready()) burst({ freq: 2600, q: 4, dur: 0.015, gain: 0.03 }); },
   };
 })();
 
@@ -175,31 +229,42 @@ function tick() {
 tick(); setInterval(tick, 15000);
 document.getElementById('year').textContent = new Date().getFullYear();
 
-/* ---------- Flow field banner ---------- */
+/* ---------- Harmonograph banner ----------
+   A pen traces x = sin(a·s + φ)·e^(−ks), y = sin(b·s)·e^(−ks).
+   The ratio a:b is the same ratio as the two notes you hear. */
 (() => {
   const canvas = document.getElementById('field');
   const chip = document.querySelector('.chip');
   const g = canvas.getContext('2d');
-  const palettes = [
-    { name: 'ember',  bg: '#1b1020', c: ['#ff6b3d', '#ffb347', '#ff3d6e', '#ffd9a0'] },
-    { name: 'tide',   bg: '#0b1d2c', c: ['#3d7bff', '#4fd1c5', '#a5f3fc', '#1e40af'] },
-    { name: 'meadow', bg: '#0f1d14', c: ['#16a36a', '#a3e635', '#fde047', '#4ade80'] },
-    { name: 'dusk',   bg: '#160f24', c: ['#a855f7', '#f472b6', '#818cf8', '#fcd34d'] },
+  const ratios = [
+    [1, 2, 'octave'], [2, 3, 'perfect fifth'], [3, 4, 'perfect fourth'],
+    [3, 5, 'major sixth'], [4, 5, 'major third'], [5, 6, 'minor third'],
   ];
-  let pi = 0, W = 0, H = 0, dpr = 1, parts = [], seed = Math.random() * 1000, t = 0, running = true;
-  const pointer = { x: -999, y: -999, active: false };
+  const DRAW_SECONDS = 16, HOLD_SECONDS = 4;
+  let S_END = 64, K = 0.026;
+  let ri = 1, s = 0, W = 0, H = 0, dpr = 1, phase0 = 0, last = 0, holdUntil = 0, visible = true;
+  let ink = '#1a1a18', pen;
 
-  function field(x, y) {
-    const s = 0.0055;
-    return (Math.sin(x * s + seed) + Math.cos(y * s * 1.3 - seed * 0.7) +
-            Math.sin((x + y) * s * 0.6 + t * 0.0004)) * Math.PI * 0.75;
+  const pt = v => {
+    const [a, b] = ratios[ri];
+    const e = Math.exp(-K * v), phi = phase0 + 0.012 * v;
+    return [W / 2 + Math.sin(a * v + phi) * e * W * 0.36,
+            H / 2 + Math.sin(b * v) * e * H * 0.4];
+  };
+  function readInk() { ink = getComputedStyle(root).getPropertyValue('--muted').trim() || '#8a8a84'; }
+
+  function drawRange(from, to) {
+    const step = 0.012;
+    g.strokeStyle = ink; g.lineWidth = 1; g.globalAlpha = 1; g.lineJoin = g.lineCap = 'round';
+    g.beginPath();
+    let [x, y] = pt(from); g.moveTo(x, y);
+    for (let v = from + step; v < to; v += step) { [x, y] = pt(v); g.lineTo(x, y); }
+    [x, y] = pt(to); g.lineTo(x, y);
+    g.stroke(); g.globalAlpha = 1;
   }
-  function spawn(p = {}) {
-    p.x = Math.random() * W; p.y = Math.random() * H;
-    p.life = 60 + Math.random() * 140;
-    p.c = palettes[pi].c[Math.floor(Math.random() * palettes[pi].c.length)];
-    p.w = 1 + Math.random() * 2.4;
-    return p;
+  function redraw() {          // repaint everything drawn so far (resize / theme change)
+    g.clearRect(0, 0, W, H);
+    if (s > 0) drawRange(0, s);
   }
   function resize() {
     dpr = Math.min(devicePixelRatio || 1, 2);
@@ -207,53 +272,72 @@ document.getElementById('year').textContent = new Date().getFullYear();
     W = r.width; H = r.height;
     canvas.width = W * dpr; canvas.height = H * dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    paintBg(1);
-    parts = Array.from({ length: Math.round(W * H / 260) }, () => spawn());
+    redraw();
+    if (pen) redrawTip();
   }
-  function paintBg(a) {
-    g.globalAlpha = a; g.fillStyle = palettes[pi].bg; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+  function setChip() { const [a, b, name] = ratios[ri]; chip.textContent = `${a} : ${b} · ${name}`; }
+
+  function start(index, withSound) {
+    ri = (index + ratios.length) % ratios.length;
+    // higher ratios wind faster, so give them fewer turns to keep every drawing equally calm
+    S_END = 100 / ratios[ri][1]; K = 1.6 / S_END;
+    s = 0; phase0 = Math.PI / 2 + (Math.random() - 0.5) * 0.6; holdUntil = 0;
+    g.clearRect(0, 0, W, H); setChip();
+    if (withSound) sfx.interval(ratios[ri][0], ratios[ri][1], DRAW_SECONDS * 0.8);
+    if (reduceMotion) { s = S_END; redraw(); }
   }
-  function step() {
-    paintBg(0.035);
-    g.lineCap = 'round';
-    for (const p of parts) {
-      let a = field(p.x, p.y);
-      let vx = Math.cos(a) * 1.4, vy = Math.sin(a) * 1.4;
-      if (pointer.active) {
-        const dx = p.x - pointer.x, dy = p.y - pointer.y, d2 = dx * dx + dy * dy;
-        if (d2 < 6400) { const k = (1 - d2 / 6400) * 4; vx += (-dy / 40) * k + dx / 60 * k; vy += (dx / 40) * k + dy / 60 * k; }
+
+  function frame(now) {
+    const dt = Math.min((now - (last || now)) / 1000, 0.05); last = now;
+    if (visible && !reduceMotion) {
+      if (s < S_END) {
+        const next = Math.min(S_END, s + dt * S_END / DRAW_SECONDS);
+        drawRange(s, next); s = next;
+        if (s >= S_END) holdUntil = now + HOLD_SECONDS * 1000;
+      } else if (holdUntil && now > holdUntil) {
+        start(ri + 1, false);  // moves on quietly by itself; sound only when you touch it
       }
-      g.strokeStyle = p.c; g.lineWidth = p.w; g.globalAlpha = 0.55;
-      g.beginPath(); g.moveTo(p.x, p.y); p.x += vx; p.y += vy; g.lineTo(p.x, p.y); g.stroke();
-      if (--p.life < 0 || p.x < -5 || p.x > W + 5 || p.y < -5 || p.y > H + 5) spawn(p);
+      // pen tip
+      pen.style.opacity = s < S_END ? 1 : 0;
+      if (s < S_END) redrawTip();
     }
-    g.globalAlpha = 1;
-    t++;
+    requestAnimationFrame(frame);
   }
-  function loop() { if (running) step(); requestAnimationFrame(loop); }
-  function setChip() { chip.textContent = `0${pi + 1} / 0${palettes.length} · ${palettes[pi].name}`; }
+  // pen tip: a small dot positioned over the canvas
+  pen = document.createElement('span');
+  pen.className = 'pen'; canvas.after(pen);
+  if (reduceMotion) pen.style.opacity = 0;
+  function redrawTip() {
+    const [x, y] = pt(s);
+    pen.style.transform = `translate(${x}px, ${y}px)`;
+  }
 
-  function pos(e) { const r = canvas.getBoundingClientRect(); pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; }
-  let lastPluck = 0;
+  // Drag left/right to pick a ratio; a plain click moves to the next one.
+  let dragging = false, moved = false, downX = 0;
+  const indexAt = x => Math.min(ratios.length - 1, Math.max(0, Math.floor(x / W * ratios.length)));
+  canvas.addEventListener('pointerdown', e => {
+    dragging = true; moved = false; downX = e.clientX;
+    canvas.setPointerCapture(e.pointerId);
+  });
   canvas.addEventListener('pointermove', e => {
-    pos(e); pointer.active = true;
-    const now = performance.now();
-    if (e.pointerType === 'mouse' && now - lastPluck > 260 && Math.abs(e.movementX) + Math.abs(e.movementY) > 18) { sfx.pluck(); lastPluck = now; }
+    if (!dragging || Math.abs(e.clientX - downX) < 8) return;
+    moved = true;
+    const i = indexAt(e.clientX - canvas.getBoundingClientRect().left);
+    if (i !== ri) { ri = i; setChip(); sfx.notch(); }
   });
-  canvas.addEventListener('pointerleave', () => (pointer.active = false));
-  canvas.addEventListener('click', e => {
-    pos(e);
-    pi = (pi + 1) % palettes.length; seed = Math.random() * 1000;
-    paintBg(0.85); parts.forEach(p => spawn(p)); setChip(); sfx.chime(true);
-    if (reduceMotion) for (let i = 0; i < 160; i++) step();
+  canvas.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    start(moved ? ri : ri + 1, true);
   });
+  canvas.addEventListener('pointercancel', () => (dragging = false));
 
+  new MutationObserver(() => { readInk(); redraw(); })
+    .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  if ('IntersectionObserver' in window)
+    new IntersectionObserver(([en]) => (visible = en.isIntersecting)).observe(canvas);
   addEventListener('resize', () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 150); });
-  resize(); setChip();
-  if (reduceMotion) { for (let i = 0; i < 160; i++) step(); return; }
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([en]) => (running = en.isIntersecting)).observe(canvas);
-  }
-  for (let i = 0; i < 40; i++) step(); // start with some texture already there
-  loop();
+
+  readInk(); resize(); start(1, false);
+  requestAnimationFrame(frame);
 })();

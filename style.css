@@ -71,8 +71,12 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- Hero ---------- */
 .hero-band .col { padding: 0 0 28px; }
 .banner { position: relative; height: 240px; }
-#field { display: block; width: 100%; height: 100%; background: #0d1b2a; cursor: crosshair; touch-action: pan-y; }
-.chip { position: absolute; right: 10px; bottom: 10px; font: 11px var(--mono); color: #2b2b28; background: rgba(240,240,232,.88); padding: 3px 8px; border-radius: 5px; letter-spacing: .02em; }
+#field { display: block; width: 100%; height: 100%; background-color: var(--soft); background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 16px 16px; cursor: ew-resize; touch-action: pan-y; border-bottom: 1px dotted var(--line); }
+.pen { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--fg); pointer-events: none; transition: opacity .4s; box-shadow: 0 0 0 3px color-mix(in srgb, var(--fg) 12%, transparent); }
+.hint { position: absolute; left: 12px; top: 10px; font-size: 11px; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.banner:hover .hint { opacity: 1; }
+@media (hover: none) { .hint { opacity: 1; } }
+.chip { position: absolute; right: 10px; bottom: 10px; font: 11px var(--mono); color: var(--fg); background: var(--card); border: 1px solid var(--line); pointer-events: none; padding: 3px 8px; border-radius: 5px; letter-spacing: .02em; }
 .note { position: absolute; left: calc(100% + 32px); top: 64px; width: 150px; font: 14px/1.35 var(--hand); color: var(--muted); transform: rotate(-4deg); }
 .note svg { display: block; width: 44px; height: 30px; margin-top: 8px; stroke-width: 1.4; }
 
