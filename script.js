@@ -275,7 +275,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
     redraw();
     if (pen) redrawTip();
   }
-  function setChip() { const [a, b, name] = ratios[ri]; chip.textContent = `${a} : ${b} · ${name}`; }
+  function setChip(i = ri) { const [a, b, name] = ratios[i]; chip.textContent = `${a} : ${b} · ${name}`; }
 
   function start(index, withSound) {
     ri = (index + ratios.length) % ratios.length;
@@ -313,24 +313,24 @@ document.getElementById('year').textContent = new Date().getFullYear();
   }
 
   // Drag left/right to pick a ratio; a plain click moves to the next one.
-  let dragging = false, moved = false, downX = 0;
+  let dragging = false, moved = false, downX = 0, picked = ri;
   const indexAt = x => Math.min(ratios.length - 1, Math.max(0, Math.floor(x / W * ratios.length)));
   canvas.addEventListener('pointerdown', e => {
-    dragging = true; moved = false; downX = e.clientX;
+    dragging = true; moved = false; downX = e.clientX; picked = ri;
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e => {
     if (!dragging || Math.abs(e.clientX - downX) < 8) return;
     moved = true;
     const i = indexAt(e.clientX - canvas.getBoundingClientRect().left);
-    if (i !== ri) { ri = i; setChip(); sfx.notch(); }
+    if (i !== picked) { picked = i; setChip(picked); sfx.notch(); }
   });
   canvas.addEventListener('pointerup', () => {
     if (!dragging) return;
     dragging = false;
-    start(moved ? ri : ri + 1, true);
+    start(moved ? picked : ri + 1, true);
   });
-  canvas.addEventListener('pointercancel', () => (dragging = false));
+  canvas.addEventListener('pointercancel', () => { dragging = false; setChip(); });
 
   new MutationObserver(() => { readInk(); redraw(); })
     .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
