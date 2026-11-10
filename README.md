@@ -23,6 +23,6 @@ Open `index.html` in a browser. That's it.
 Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the link, name and description, and pick a colour (`--c1` … `--c5`).
 
 ## Customise
-- **Photo:** replace `<span>mb</span>` inside `.avatar` in `index.html` with `<img src="me.jpg" alt="">` and add `me.jpg` to the folder.
+- **Avatar:** `avatar.svg` is a hand-drawn line illustration. To use a photo instead, put `me.jpg` in the folder and change the `src` of the image inside `.avatar` in `index.html`.
 - **Sounds:** generated in code with the Web Audio API (no audio files). Visitors can switch them off with the speaker icon or "sound on" in the footer. Browsers only allow sound after the first click/tap/keypress on the page.
 - **Banner:** a harmonograph — a pen tracing two combined waves. Drag left/right to pick a ratio (1:2 octave … 5:6 minor third), or click/tap for the next one. You hear the same two notes the curve is drawn from. The list of ratios is the `ratios` array in `script.js`.
