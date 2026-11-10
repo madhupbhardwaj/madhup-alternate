@@ -25,11 +25,16 @@ const sfx = (() => {
   const MAX_VOICES = 6;
   const enabled = () => root.dataset.sound !== 'off';
 
+  // Browsers only allow sound after the visitor clicks, taps or presses a key
+  // (scrolling doesn't count). We set the engine up straight away anyway, so
+  // that browsers which already allow sound for this site play it from the
+  // very first keystroke, and resume it on the first real interaction otherwise.
   function unlock() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== 'running') ctx.resume().catch(() => {}); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    ctx = new AC();
+    try { ctx = new AC(); } catch (e) { return; }
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
 
     // white noise, reused for key taps
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -52,8 +57,10 @@ const sfx = (() => {
     const wet = ctx.createGain(); wet.gain.value = 0.22;
     bus.connect(verb).connect(wet).connect(comp);
   }
-  ['pointerdown', 'keydown', 'touchstart'].forEach(e =>
-    addEventListener(e, unlock, { passive: true }));
+  // every kind of interaction that browsers accept as "the visitor did something"
+  ['pointerdown', 'pointerup', 'mousedown', 'keydown', 'touchstart', 'touchend', 'click'].forEach(e =>
+    addEventListener(e, unlock, { passive: true, capture: true }));
+  unlock();   // try right away
 
   const ready = () => enabled() && ctx && ctx.state === 'running';
 
