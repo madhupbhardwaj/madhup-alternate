@@ -9,6 +9,7 @@
   const input = document.getElementById('termIn');
   const body = document.getElementById('termBody');
   const term = document.getElementById('term');
+  const LOST = term?.dataset.intro === '404';   // the 404 page's terminal opens differently
   if (!out || !input) return;
 
   // ---------- content (only things Madhup has said about himself) ----------
@@ -55,7 +56,7 @@
     help: { help: 'show this list', run: () => html(
       '<span class="hl">things you can type:</span>\n\n' +
       Object.entries(COMMANDS).filter(([, c]) => c.help)
-        .map(([n, c]) => `  <span class="g">${pad(n + (c.args ? ' ' + c.args : ''), 18)}</span><span class="dim">${esc(c.help)}</span>`).join('\n') +
+        .map(([n, c]) => `  <span class="g">${esc(pad(n + (c.args ? ' ' + c.args : ''), 21))}</span><span class="dim">${esc(c.help)}</span>`).join('\n') +
       '\n\n<span class="dim">tip: tab completes, ↑ ↓ scroll through history, ctrl+l clears.</span>') },
     about:    { help: 'who i am',                     run: () => TEXT.about },
     projects: { help: 'things i have built',          run: () => html(
@@ -113,7 +114,15 @@
     hi:       { run: () => 'hi! :)' },
     hello:    { run: () => 'hello! :)' },
     sudo:     { run: () => html('<span class="err">visitor is not in the sudoers file. this incident will be reported.</span>') },
-    cd:       { run: ([d]) => d && d !== '~' ? html(`<span class="err">cd: no such directory: ${esc(d)}</span> <span class="dim">(everything's right here. try</span> ls<span class="dim">)</span>`) : '' },
+    cd:       { run: ([d = '~']) => {
+      const where = d.replace(/^\/+|\/+$/g, '').toLowerCase();
+      const places = { '': '/', '~': '/', home: '/', me: '/me', projects: '/projects', about: '/about', reading: '/reading', terminal: '/terminal' };
+      if (where in places) {
+        if (!LOST && (where === 'terminal' || where === '~' || where === '')) return '';   // already here
+        go(places[where]); return `going to ${places[where]}…`;
+      }
+      return html(`<span class="err">cd: no such directory: ${esc(d)}</span> <span class="dim">(try</span> cd me<span class="dim">,</span> cd projects <span class="dim">or</span> cd ~<span class="dim">)</span>`);
+    } },
     pwd:      { run: () => '/users/visitor/madhup' },
     vim:      { run: () => "you're safe. there's no vim here, so no need to work out how to quit it." },
     rm:       { run: () => html('<span class="err">rm: nice try.</span>') },
@@ -194,13 +203,14 @@
   });
 
   // ---------- window buttons ----------
-  document.getElementById('termClose').addEventListener('click', () => { sfx.click(); go('/'); });
-  document.getElementById('termMin').addEventListener('click', () => { sfx.click(); term.classList.toggle('min'); });
-  document.getElementById('termMax').addEventListener('click', () => { sfx.click(); term.classList.toggle('big'); setTimeout(updateSize, 400); });
+  document.getElementById('termClose')?.addEventListener('click', () => { sfx.click(); go('/'); });
+  document.getElementById('termMin')?.addEventListener('click', () => { sfx.click(); term.classList.toggle('min'); });
+  document.getElementById('termMax')?.addEventListener('click', () => { sfx.click(); term.classList.toggle('big'); setTimeout(updateSize, 400); });
 
   // title shows the window size in characters, like the real thing
   const sizeEl = document.getElementById('termSize');
   function updateSize() {
+    if (!sizeEl) return;
     const probe = document.createElement('span');
     probe.textContent = 'M'; probe.style.visibility = 'hidden'; out.appendChild(probe);
     const cw = probe.getBoundingClientRect().width, lh = parseFloat(getComputedStyle(body).lineHeight) || 21;
@@ -210,10 +220,22 @@
   addEventListener('resize', updateSize);
 
   // ---------- start ----------
-  const last = new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/,/g, '');
-  print(html(`<span class="dim">Last login: ${esc(last)} on ttys001</span>`));
-  print(html("welcome to madhup's terminal. type <span class=\"g\">help</span> to see what you can do."));
-  print(' ');
+  if (LOST) {
+    // the 404 page: show the address that didn't work, then hand over the prompt
+    print(html(promptHTML + 'cd ' + esc(location.pathname)));
+    print(html(`<span class="err">cd: no such page: ${esc(location.pathname)}</span>`));
+    print(' ');
+    print(html(promptHTML + 'ls'));
+    print(html(['/', '/me', '/projects', '/terminal'].map(p => `<a href="${p}">${p === '/' ? 'home' : p.slice(1)}</a>`).join('   ')));
+    print(' ');
+    print(html('<span class="dim">you can type here too. try</span> <span class="g">help</span><span class="dim">, or</span> <span class="g">cd ~</span> <span class="dim">to go home.</span>'));
+    print(' ');
+  } else {
+    const last = new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/,/g, '');
+    print(html(`<span class="dim">Last login: ${esc(last)} on ttys001</span>`));
+    print(html("welcome to madhup's terminal. type <span class=\"g\">help</span> to see what you can do."));
+    print(' ');
+    input.focus({ preventScroll: true });
+  }
   updateSize();
-  input.focus({ preventScroll: true });
 })();

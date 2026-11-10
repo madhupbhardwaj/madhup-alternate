@@ -384,7 +384,7 @@ h2[data-type] { cursor: default; -webkit-tap-highlight-color: transparent; }
 .nf .col { padding-top: 56px; padding-bottom: 72px; display: flex; flex-direction: column; align-items: center; }
 .nf-stage { margin-bottom: 40px; }
 .nf-term { width: 100%; max-width: 560px; margin-top: 0; }
-.nf-term .term-body { height: auto; cursor: default; }
+.nf-term .term-body { height: auto; min-height: 240px; max-height: 50vh; cursor: text; }
 .nf-term .err { color: #ff6b6b; }
 .nf-links a { margin-right: 14px; }
 .nf-cursor { display: inline-block; width: 8px; height: 15px; background: #e5e5e7; vertical-align: -2px; animation: blink 1s steps(1) infinite; }

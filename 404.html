@@ -144,19 +144,17 @@
       <span class="qq" aria-hidden="true"><i>?</i><i>?</i><i>?</i></span>
     </div>
 
-    <div class="term nf-term" aria-label="page not found">
+    <div class="term nf-term" id="term" data-intro="404">
       <div class="term-bar">
         <span class="lights" aria-hidden="true"><span class="light red"></span><span class="light yellow"></span><span class="light green"></span></span>
         <span class="term-title"><span>zsh</span></span>
       </div>
-      <div class="term-body">
-        <div class="term-line"><span class="prompt"><span class="p-user">visitor@madhup</span> <span class="p-path">~</span> %</span> cd <span id="nfPath">/somewhere</span></div>
-        <div class="term-line err">cd: no such page: <span id="nfPath2">/somewhere</span></div>
-        <div class="term-line">&nbsp;</div>
-        <div class="term-line"><span class="prompt"><span class="p-user">visitor@madhup</span> <span class="p-path">~</span> %</span> ls</div>
-        <div class="term-line nf-links"><a href="/">home</a>   <a href="/me">me</a>   <a href="/projects">projects</a>   <a href="/terminal">terminal</a></div>
-        <div class="term-line">&nbsp;</div>
-        <div class="term-line"><span class="prompt"><span class="p-user">visitor@madhup</span> <span class="p-path">~</span> %</span> <span class="nf-cursor"></span></div>
+      <div class="term-body" id="termBody" role="log" aria-live="polite">
+        <div id="termOut"></div>
+        <label class="term-line term-input-line">
+          <span class="prompt" aria-hidden="true"><span class="p-user">visitor@madhup</span> <span class="p-path">~</span> %</span>
+          <input id="termIn" type="text" aria-label="type a command, then press enter" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        </label>
       </div>
     </div>
   </div>
@@ -169,10 +167,7 @@
   </div>
 </footer>
 
-<script>
-  // show the address they tried (as text, never as HTML)
-  ['nfPath', 'nfPath2'].forEach(id => { document.getElementById(id).textContent = location.pathname; });
-</script>
 <script src="/script.js"></script>
+<script src="/terminal.js"></script>
 </body>
 </html>
