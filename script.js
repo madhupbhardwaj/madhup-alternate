@@ -300,7 +300,7 @@ const QUESTIONS = [
 })();
 
 // Bubble-thock when the cursor moves onto an item. Each list plays its own rising scale.
-[['.projects a', 0], ['.pill', 2], ['.books li', 1], ['.nav-links a', 4]].forEach(([sel, base]) =>
+[['.projects a', 0], ['.pill', 2], ['.nav-links a', 4]].forEach(([sel, base]) =>
   document.querySelectorAll(sel).forEach((el, i) =>
     el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.bubble(base + i); })));
 // question chips are created later, so listen on their container
@@ -310,11 +310,11 @@ document.getElementById('questions').addEventListener('pointerover', e => {
   sfx.bubble(3 + [...q.parentNode.children].indexOf(q));
 });
 
-// On phones there's no hover, so rows give a softer bubble as they scroll past the middle of the screen.
+// On phones there's no hover, so project rows give a softer bubble as they scroll past the middle of the screen.
 if (matchMedia('(hover: none)').matches && 'IntersectionObserver' in window) {
   let touched = false;
   addEventListener('touchstart', () => (touched = true), { passive: true, once: true });
-  const rows = [...document.querySelectorAll('.projects li, .books li')];
+  const rows = [...document.querySelectorAll('.projects li')];
   const mid = new IntersectionObserver(entries => entries.forEach(en => {
     if (en.isIntersecting && touched) sfx.bubble(rows.indexOf(en.target), true);
   }), { rootMargin: '-50% 0px -50% 0px' });
