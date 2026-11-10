@@ -86,7 +86,7 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
 .avatar { transition: transform .25s cubic-bezier(.3,1.5,.5,1); }
 .avatar-wrap.say .avatar { transform: rotate(-3deg); }
 .bubble {
-  position: absolute; left: calc(100% - 22px); top: -16px; z-index: 2;
+  position: absolute; left: calc(100% - 22px); bottom: calc(100% - 12px); z-index: 2;
   font: 16px/1 var(--hand); color: var(--fg); white-space: nowrap;
   background: var(--card); border: 1.5px solid var(--fg); border-radius: 12px; padding: 7px 11px 5px;
   opacity: 0; transform: scale(.5) translate(-6px, 10px); transform-origin: 0% 100%;
@@ -98,6 +98,13 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
   transform: rotate(45deg) skew(10deg, 10deg);
 }
 .avatar-wrap.say .bubble { opacity: 1; transform: none; }
+/* longer answers: wraps, grows upward over the banner, slightly tilted like a note */
+.bubble.long {
+  white-space: normal; width: max-content; max-width: min(320px, calc(100vw - 120px));
+  font-size: 16px; line-height: 1.35; padding: 9px 15px 8px; border-radius: 14px; min-height: 1.35em;
+}
+.avatar-wrap.say .bubble.long { transform: rotate(-1.5deg); }
+.bubble .tcaret { display: inline-block; width: 1.5px; height: 1em; background: var(--fg); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
 .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 h1 { font: 400 40px/1.1 var(--serif); color: var(--fg); letter-spacing: -.01em; }
 .sub { font-size: 13px; color: var(--muted); min-height: 1.6em; margin-top: 4px; letter-spacing: .02em; }
@@ -115,6 +122,25 @@ h1 { font: 400 40px/1.1 var(--serif); color: var(--fg); letter-spacing: -.01em; 
 .pill .ext { color: var(--muted); font-size: 11px; }
 .pill:hover { border-color: var(--muted); transform: translateY(-1px); }
 .pill:active { transform: translateY(0) scale(.98); }
+button.pill { font-family: var(--sans); cursor: pointer; }
+.pill[aria-expanded="true"] { background: var(--soft); border-color: var(--muted); }
+
+/* "more about me" questions */
+.ask { padding: 18px 24px 0; }
+.ask[hidden] { display: none; }
+.ask.open { animation: askIn .3s ease both; }
+@keyframes askIn { from { opacity: 0; transform: translateY(-4px); } }
+.ask-hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.questions { display: flex; flex-wrap: wrap; gap: 8px; }
+.q {
+  font: 13px/1.3 var(--sans); color: var(--text); background: transparent; cursor: pointer;
+  border: 1px dashed var(--line); border-radius: 999px; padding: 7px 14px; text-align: left;
+  transition: border-color .15s, background .15s, color .15s, transform .15s;
+}
+.q:hover { border-color: var(--muted); color: var(--fg); transform: translateY(-1px); }
+.q:active { transform: scale(.97); }
+.q[aria-pressed="true"] { border-style: solid; border-color: var(--fg); color: var(--fg); background: var(--card); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- Sections ---------- */
 section { scroll-margin-top: 56px; }
@@ -165,6 +191,7 @@ h2 { font: 400 28px/1.3 var(--serif); color: var(--fg); min-height: 1.3em; }
   h1 { font-size: 31px; }
   .meta { grid-template-columns: 1fr; padding: 20px 16px 0; }
   .pills { padding: 18px 16px 0; }
+  .ask { padding: 16px 16px 0; }
   .projects a { grid-template-columns: 10px 1fr; margin: 0 -8px; padding: 14px 8px; }
   .p-url { display: none; }
   .books li { flex-direction: column; gap: 0; }

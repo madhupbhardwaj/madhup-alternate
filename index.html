@@ -78,7 +78,15 @@
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17"/></svg>linkedin</a>
       <a class="pill" href="https://problemset.in" target="_blank" rel="noopener" data-sfx>
         <svg viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></svg>problemset<span class="ext">↗</span></a>
+      <button class="pill" id="askBtn" type="button" aria-expanded="false" aria-controls="ask">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg>more about me</button>
     </div>
+
+    <div class="ask" id="ask" hidden>
+      <p class="ask-hint">pick a question. i'll answer it up by my face.</p>
+      <div class="questions" id="questions"></div>
+    </div>
+    <p class="sr-only" id="answerLive" aria-live="polite"></p>
   </div>
 </header>
 

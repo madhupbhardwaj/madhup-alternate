@@ -120,6 +120,20 @@ const sfx = (() => {
       mallet(a, { gain: 0.07, dur: 0.8 });
       mallet(b, { gain: 0.07, dur: 1.0, delay: 0.08 });
     },
+    // thocky mechanical key: a low felt "thock" + a soft upper click, a little different every time
+    thock(space = false) {
+      if (!ready()) return;
+      const r = Math.random();
+      burst({ freq: (space ? 260 : 420) + r * 160, q: 1.4, dur: space ? 0.07 : 0.05, gain: space ? 0.16 : 0.12, type: 'lowpass' });
+      tone((space ? 110 : 150) + r * 40, { to: (space ? 70 : 90) + r * 20, dur: 0.05, gain: space ? 0.08 : 0.06 });
+      burst({ freq: 2200 + r * 900, q: 3, dur: 0.012, gain: 0.025 });
+    },
+    // question button: a soft, round "pop"
+    pop() {
+      if (!ready()) return;
+      tone(380, { to: 920, dur: 0.07, gain: 0.07 });
+      mallet(1318.5, { gain: 0.035, dur: 0.35, delay: 0.05 });
+    },
     // a cheerful little "hi!" — two quick rising notes
     hi() {
       if (!ready()) return;
@@ -166,22 +180,98 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('[data-sfx]')) sfx.click();
 });
 // Soft tick when moving across projects / pills
-// Avatar says "hi :)" on hover (mouse) or tap (touch)
-(() => {
+// Avatar speech bubble: says "hi :)" on hover/tap, and types out answers to questions.
+const avatarTalk = (() => {
   const av = document.getElementById('avatar');
-  let hideTimer, lastHi = 0;
-  const say = () => {
+  const bubble = av.querySelector('.bubble');
+  let hideTimer, typeTimer, lastHi = 0, answering = false;
+
+  const show = () => av.classList.add('say');
+  const hide = () => { av.classList.remove('say'); answering = false; };
+
+  function hi() {
+    if (answering) return;                       // don't interrupt an answer
     clearTimeout(hideTimer);
+    bubble.classList.remove('long');
+    bubble.textContent = 'hi :)';
     if (!av.classList.contains('say') && performance.now() - lastHi > 600) { sfx.hi(); lastHi = performance.now(); }
-    av.classList.add('say');
-  };
-  const quiet = () => av.classList.remove('say');
-  av.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') say(); });
-  av.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') quiet(); });
+    show();
+  }
+  av.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') hi(); });
+  av.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !answering) hide(); });
   av.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse') return;
-    sfx.unlock(); say();
-    hideTimer = setTimeout(quiet, 2200);
+    sfx.unlock(); hi();
+    if (!answering) hideTimer = setTimeout(hide, 2200);
+  });
+
+  // Type `text` into the bubble with thocky key sounds.
+  function answer(text) {
+    clearTimeout(hideTimer); clearTimeout(typeTimer);
+    answering = true;
+    bubble.classList.add('long');
+    bubble.textContent = '';
+    show();
+    // bring the avatar into view if the visitor has scrolled away
+    const r = av.getBoundingClientRect();
+    if (r.top < 60 || r.bottom > innerHeight) av.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+
+    if (reduceMotion) { bubble.textContent = text; return done(); }
+    const out = document.createTextNode(''), caret = document.createElement('span');
+    caret.className = 'tcaret';
+    bubble.append(out, caret);
+    let i = 0;
+    (function next() {
+      const ch = text[i++];
+      out.data += ch;
+      if (ch !== ' ' || i % 2) sfx.thock(ch === ' ');
+      if (i < text.length) {
+        const pause = /[.,!?]/.test(ch) ? 180 : 38;   // little breath after punctuation
+        typeTimer = setTimeout(next, pause + Math.random() * 45);
+      } else { caret.remove(); done(); }
+    })();
+    function done() { hideTimer = setTimeout(hide, Math.max(5000, text.length * 90)); }
+  }
+  return { answer, hide, isAnswering: () => answering };
+})();
+
+/* ---------- "more about me" ----------
+   Edit this list: each question appears as a button, and its answer is
+   typed out in the speech bubble next to the avatar. */
+const QUESTIONS = [
+  { q: 'question one?',   a: 'answer one goes here.' },
+  { q: 'question two?',   a: 'answer two goes here.' },
+  { q: 'question three?', a: 'answer three goes here.' },
+  { q: 'question four?',  a: 'answer four goes here.' },
+  { q: 'question five?',  a: 'answer five goes here.' },
+  { q: 'question six?',   a: 'answer six goes here.' },
+];
+(() => {
+  const btn = document.getElementById('askBtn');
+  const panel = document.getElementById('ask');
+  const list = document.getElementById('questions');
+  const live = document.getElementById('answerLive');
+
+  QUESTIONS.forEach(({ q, a }) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'q'; b.textContent = q;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      sfx.pop();
+      list.querySelectorAll('.q').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      live.textContent = a;
+      setTimeout(() => avatarTalk.answer(a), 120);   // let the pop finish before typing starts
+    });
+    list.appendChild(b);
+  });
+
+  btn.addEventListener('click', () => {
+    sfx.click();
+    const open = panel.hidden;
+    panel.hidden = !open;
+    panel.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    if (!open) { avatarTalk.hide(); list.querySelectorAll('.q').forEach(x => x.setAttribute('aria-pressed', 'false')); }
   });
 })();
 

@@ -26,3 +26,4 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 - **Avatar:** `avatar.svg` is a hand-drawn line illustration. To use a photo instead, put `me.jpg` in the folder and change the `src` of the image inside `.avatar` in `index.html`.
 - **Sounds:** generated in code with the Web Audio API (no audio files). Visitors can switch them off with the speaker icon or "sound on" in the footer. Browsers only allow sound after the first click/tap/keypress on the page.
 - **Banner:** a harmonograph — a pen tracing two combined waves. Drag left/right to pick a ratio (1:2 octave … 5:6 minor third), or click/tap for the next one. You hear the same two notes the curve is drawn from. The list of ratios is the `ratios` array in `script.js`.
+- **"more about me" questions:** edit the `QUESTIONS` list near the bottom of `script.js`. Each `{ q: '...', a: '...' }` becomes a question button, and the answer is typed out in the speech bubble next to the avatar.
