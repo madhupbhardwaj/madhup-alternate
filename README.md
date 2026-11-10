@@ -5,6 +5,8 @@ My personal portfolio. Plain HTML, CSS and JavaScript, with no build step and no
 ```
 index.html    page content (edit projects, about, books, links here)
 me.html       the "me" page, served at /me (see "Clean URLs" below)
+terminal.html the terminal page, served at /terminal
+terminal.js   the terminal's commands (edit COMMANDS to add your own)
 vercel.json   tells Vercel to serve me.html at /me
 style.css     all styling; colours are the variables at the top
 script.js     typing effect, sound effects, clock, dark mode, tall-grass banner
@@ -33,11 +35,17 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 - **"me" page:** `me.html` is one plain piece of writing. Add a paragraph with `<p>…</p>`, or a line that fills in word by word as you scroll with `<blockquote class="fill">…</blockquote>`. Links in the text use `class="dot"`.
 
 ## Clean URLs (/me, /about, /projects, /reading)
-The site links to `/me`, `/about`, `/projects` and `/reading` (no `.html`, no `#`). The host has to map those paths:
-- **Render:** Dashboard → your static site → **Redirects/Rewrites** → add four rules, each with Action **Rewrite**:
+The site links to `/me`, `/terminal`, `/about`, `/projects` and `/reading` (no `.html`, no `#`). The host has to map those paths:
+- **Render:** Dashboard → your static site → **Redirects/Rewrites** → add five rules, each with Action **Rewrite**:
   - `/me` → `/me.html`
+  - `/terminal` → `/terminal.html`
   - `/about` → `/index.html`
   - `/projects` → `/index.html`
   - `/reading` → `/index.html`
 - **Vercel:** already handled by `vercel.json`.
 Note: when you open the files straight from your computer (not through a host), these links won't work, because they point at the root of a website.
+
+## Terminal
+`/terminal` is a small macOS-style terminal. Commands live in the `COMMANDS` object in `terminal.js`. Add one like:
+`hobbies: { help: 'what i do for fun', run: () => 'your answer here' },`
+Commands without a `help` line still work but stay hidden from `help` (handy for easter eggs).
