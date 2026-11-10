@@ -305,20 +305,30 @@ syncSoundLabel();
 
 /* ---------- Typing ---------- */
 function typeInto(el, text, { speed = 55, onDone } = {}) {
+  if (el._typing) return;                      // already typing this one
   if (reduceMotion) { el.textContent = text; onDone && onDone(); return; }
+  el._typing = true;
   el.textContent = '';
   let i = 0;
   (function next() {
     el.textContent = text.slice(0, ++i);
     if (text[i - 1] !== ' ') sfx.key();
     if (i < text.length) setTimeout(next, speed * (0.6 + Math.random() * 0.9));
-    else onDone && onDone();
+    else { el._typing = false; el._typedAt = performance.now(); onDone && onDone(); }
   })();
+}
+// Retype on demand, with a short cooldown so it doesn't stutter
+function retype(el, speed) {
+  if (el._typing || performance.now() - (el._typedAt || 0) < 400) return;
+  typeInto(el, el.dataset.text, { speed });
 }
 
 // Hero subtitle
 const typed = document.getElementById('typed');
 setTimeout(() => typeInto(typed, typed.dataset.text, { speed: 60 }), 500);
+
+// Click (or tap) the name to retype the subtitle
+document.getElementById('nameBtn').addEventListener('click', () => retype(typed, 60));
 
 // Section headings type themselves in as they scroll into view
 const heads = document.querySelectorAll('[data-type]');
@@ -333,6 +343,11 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 } else {
   heads.forEach(h => (h.textContent = h.dataset.text));
 }
+// Hover (mouse) or tap (touch) a heading to watch it type again
+heads.forEach(h => {
+  h.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') retype(h, 70); });
+  h.addEventListener('click', () => retype(h, 70));   // taps on phones (scroll-drags don't count)
+});
 
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');
