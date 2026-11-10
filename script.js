@@ -9,6 +9,22 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
 
+/* ---------- Time of day in India ----------
+   Used for the avatar's sleepiness and the grass banner's light.
+   For testing, add ?t=dawn, ?t=day, ?t=dusk or ?t=night to the address. */
+const TIME_TEST = { dawn: 6.5, day: 12, dusk: 18, night: 23.5 }[new URLSearchParams(location.search).get('t')];
+function istHour() {
+  if (TIME_TEST !== undefined) return TIME_TEST;
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date());
+  const get = t => +p.find(x => x.type === t).value;
+  return (get('hour') % 24) + get('minute') / 60;
+}
+function updateMood() {
+  const h = istHour();
+  root.dataset.mood = h >= 23 || h < 6 ? 'sleepy' : 'awake';   // i'm asleep from 11pm to 6am (india time)
+}
+updateMood(); setInterval(updateMood, 60000);
+
 /* ---------- Theme ---------- */
 if (!root.dataset.theme) {
   root.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -218,6 +234,18 @@ const avatarTalk = (() => {
     show();
   }
   av.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') hi(); });
+  // click (or tap) the avatar several times quickly and it gets surprised
+  let taps = [];
+  av.addEventListener('pointerdown', () => {
+    const now = performance.now();
+    taps = taps.filter(t => now - t < 900).concat(now);
+    if (taps.length >= 3) {
+      taps = [];
+      $('face')?.surprise?.();
+      sfx.pop();
+      answer(['woah, easy there!', 'hey! that tickles.', 'okay okay, i\'m awake!'][Math.floor(Math.random() * 3)]);
+    }
+  });
   av.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !answering) hide(); });
   av.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse') return;
@@ -551,17 +579,23 @@ heads.forEach(h => {
    when it's close), eases there smoothly, looks down when the pointer is below,
    drifts back to the middle when idle, and blinks now and then. */
 function trackEyes(face) {
-  const eyes = [...face.querySelectorAll('.eye')].map(g => ({
-    cx: +g.dataset.cx, cy: +g.dataset.cy,
-    pupil: g.querySelector('.pupil'), glint: g.querySelector('.glint'),
-    lid: g.querySelector('.lid'), open: g.querySelector('.lid').dataset.open,
-    x: 0, y: 0, tx: 0, ty: 0,
-  }));
+  const eyes = [...face.querySelectorAll('.eye')].map(g => {
+    const lid = g.querySelector('.lid');
+    const [x0, y0, qx, qy, x1, y1] = lid.dataset.open.match(/-?\d+(?:\.\d+)?/g).map(Number);
+    // a white "lid" that slides down over the pupil (sleepy / closed / blinking)
+    const cover = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    cover.setAttribute('fill', '#fff'); cover.setAttribute('stroke', 'none');
+    g.insertBefore(cover, lid);
+    return { cx: +g.dataset.cx, cy: +g.dataset.cy, pupil: g.querySelector('.pupil'), glint: g.querySelector('.glint'),
+             lid, cover, geo: { x0, y0, qx, qy, x1, y1 }, x: 0, y: 0, tx: 0, ty: 0, drop: 0, scale: 1 };
+  });
   // how far a pupil may travel (SVG units) inside the almond
   const RX = 3.6, UP = 1.2, DOWN = 2.3;
+  // how far the upper lid comes down for each mood (SVG units)
+  const LID = { open: 0, wide: -2.6, sleepy: 5.2, closed: 9.5 };
   const touchOnly = matchMedia('(hover: none)').matches;
   const pointer = { x: 0, y: 0, active: false, last: 0 };
-  let visible = true, running = false;
+  let visible = true, running = false, blinkUntil = 0, surprisedUntil = 0;
 
   function aim(e) { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; pointer.last = performance.now(); kick(); }
   addEventListener('pointermove', aim, { passive: true });
@@ -569,12 +603,22 @@ function trackEyes(face) {
   document.addEventListener('mouseout', e => { if (!e.relatedTarget) { pointer.active = false; kick(); } });
   addEventListener('blur', () => { pointer.active = false; kick(); });
   addEventListener('scroll', kick, { passive: true });   // the face moves under a still cursor
+  // moods: eyes close while sound is muted; sleepy late at night in India; wide when surprised
+  new MutationObserver(kick).observe(root, { attributes: true, attributeFilter: ['data-sound', 'data-vol', 'data-mood'] });
+  const mood = () => {
+    const now = performance.now();
+    if (now < blinkUntil) return 'closed';
+    if (now < surprisedUntil) return 'wide';
+    if (root.dataset.sound === 'off' || root.dataset.vol === 'off') return 'closed';
+    if (root.dataset.mood === 'sleepy') return 'sleepy';
+    return 'open';
+  };
 
   function targets() {
     const m = face.getScreenCTM();
     const idle = performance.now() - pointer.last > (touchOnly ? 2500 : 6000);
     for (const e of eyes) {
-      if (!m || !pointer.active || idle) { e.tx = 0; e.ty = 0; continue; }
+      if (!m || !pointer.active || idle || reduceMotion) { e.tx = 0; e.ty = 0; continue; }
       const sx = m.a * e.cx + m.c * e.cy + m.e, sy = m.b * e.cx + m.d * e.cy + m.f;
       const dx = pointer.x - sx, dy = pointer.y - sy, d = Math.hypot(dx, dy) || 1;
       const reach = Math.min(1, d / 160);                 // close to the face = look nearly straight
@@ -583,35 +627,44 @@ function trackEyes(face) {
     }
     return idle;
   }
+  function draw(e) {
+    const { x0, y0, qx, qy, x1, y1 } = e.geo, ly = qy + e.drop;
+    e.lid.setAttribute('d', `M${x0} ${y0} Q${qx} ${ly.toFixed(2)} ${x1} ${y1}`);
+    e.cover.setAttribute('d', e.drop > 0.05 ? `M${x0} ${y0} Q${qx} ${qy} ${x1} ${y1} Q${qx} ${ly.toFixed(2)} ${x0} ${y0} Z` : '');
+    const s = e.scale, c = `${e.cx} ${e.cy}`;
+    e.pupil.setAttribute('transform', `translate(${e.x.toFixed(2)} ${e.y.toFixed(2)}) translate(${c}) scale(${s.toFixed(3)}) translate(${-e.cx} ${-e.cy})`);
+    e.glint.setAttribute('transform', `translate(${(e.x * 0.85).toFixed(2)} ${(e.y * 0.85).toFixed(2)})`);
+  }
   function frame() {
-    const idle = targets();
+    const idle = targets(), m = mood(), lidTarget = LID[m], scaleTarget = m === 'wide' ? 0.72 : 1;
+    const lidSpeed = m === 'closed' && performance.now() < blinkUntil ? 0.55 : 0.2;
     let moving = false;
     for (const e of eyes) {
       e.x += (e.tx - e.x) * 0.16; e.y += (e.ty - e.y) * 0.16;
-      if (Math.abs(e.tx - e.x) > 0.01 || Math.abs(e.ty - e.y) > 0.01) moving = true;
-      e.pupil.setAttribute('transform', `translate(${e.x.toFixed(2)} ${e.y.toFixed(2)})`);
-      e.glint.setAttribute('transform', `translate(${(e.x * 0.85).toFixed(2)} ${(e.y * 0.85).toFixed(2)})`);
+      e.drop += (lidTarget - e.drop) * lidSpeed; e.scale += (scaleTarget - e.scale) * 0.2;
+      if (Math.abs(e.tx - e.x) > 0.01 || Math.abs(e.ty - e.y) > 0.01 || Math.abs(lidTarget - e.drop) > 0.02 || Math.abs(scaleTarget - e.scale) > 0.003) moving = true;
+      draw(e);
     }
-    // keep going while easing, or while a pointer is around (so the idle drift-back can kick in)
-    if (visible && (moving || (pointer.active && !idle))) requestAnimationFrame(frame); else running = false;
+    const timed = performance.now() < Math.max(blinkUntil, surprisedUntil) + 400;
+    // keep going while easing, while a pointer is around, or while a blink/surprise is playing
+    if (visible && (moving || timed || (pointer.active && !idle))) requestAnimationFrame(frame); else running = false;
   }
-  function kick() { if (!running && visible && !reduceMotion) { running = true; requestAnimationFrame(frame); } }
+  function kick() { if (!running && visible) { running = true; requestAnimationFrame(frame); } }
 
   if ('IntersectionObserver' in window)
     new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(face);
 
-  // blinking: the upper lid sweeps down while the pupil squashes, then back
-  function blink() {
-    const closed = e => e.open.replace(/Q(\d+(?:\.\d+)?) (\d+(?:\.\d+)?)/, (_, x, y) => `Q${x} ${(+y + 9).toFixed(1)}`);
-    eyes.forEach(e => { e.lid.setAttribute('d', closed(e)); e.pupil.style.opacity = e.glint.style.opacity = 0; });
-    setTimeout(() => eyes.forEach(e => { e.lid.setAttribute('d', e.open); e.pupil.style.opacity = e.glint.style.opacity = ''; }), 120);
-  }
+  function blink() { blinkUntil = performance.now() + 120; kick(); }
+  face.surprise = () => { surprisedUntil = performance.now() + 1500; kick(); };
   if (!reduceMotion) (function schedule() {
+    const sleepy = root.dataset.mood === 'sleepy';
     setTimeout(() => {
-      if (visible && !document.hidden) { blink(); if (Math.random() < 0.2) setTimeout(blink, 260); }
+      if (visible && !document.hidden && mood() !== 'closed') { blink(); if (Math.random() < 0.2) setTimeout(blink, 260); }
       schedule();
-    }, 2800 + Math.random() * 4200);
+    }, (sleepy ? 1.8 : 1) * (2800 + Math.random() * 4200));   // sleepy eyes blink slower
   })();
+  eyes.forEach(draw);
+  kick();
 }
 if ($('face')) trackEyes($('face'));
 
@@ -648,6 +701,67 @@ if ($('face')) trackEyes($('face'));
   update();
 })();
 
+/* ---------- Project previews ----------
+   Hovering a project shows a small paper card with a real screenshot of the
+   site (previews/<name>.webp), a mini browser bar and a handwritten caption.
+   It follows the cursor and tilts with the movement. On phones, each row gets
+   a small thumbnail instead. */
+(() => {
+  const rows = [...document.querySelectorAll('.projects a')];
+  if (!rows.length) return;
+  const info = a => {
+    const url = new URL(a.href);
+    const name = a.querySelector('.p-name').textContent.trim().replace(/\s+/g, '');
+    return { name, label: a.querySelector('.p-name').textContent.trim(), host: url.host, src: `/previews/${name}.webp` };
+  };
+  // phones: thumbnail in each row
+  rows.forEach(a => {
+    const { src, label } = info(a);
+    const t = document.createElement('img');
+    t.className = 'p-thumb'; t.src = src; t.alt = ''; t.loading = 'lazy'; t.decoding = 'async';
+    t.setAttribute('aria-hidden', 'true');
+    a.appendChild(t);
+  });
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const peek = document.createElement('div');
+  peek.className = 'peek'; peek.setAttribute('aria-hidden', 'true');
+  peek.innerHTML = '<div class="peek-bar"><i></i><i></i><i></i><span class="peek-url"></span></div><img alt=""><span class="peek-cap"></span>';
+  document.body.appendChild(peek);
+  const img = peek.querySelector('img'), urlEl = peek.querySelector('.peek-url'), cap = peek.querySelector('.peek-cap');
+  rows.forEach(a => { const i = new Image(); i.src = info(a).src; });   // warm the cache
+
+  let x = 0, y = 0, tx = 0, ty = 0, rot = 0, shown = false, raf = 0, lastX = 0;
+  function frame() {
+    x += (tx - x) * 0.18; y += (ty - y) * 0.18;
+    const vx = tx - lastX; lastX = tx;
+    rot += (Math.max(-7, Math.min(7, vx * 0.35)) - 2 - rot) * 0.12;   // leans into the movement, rests at -2°
+    peek.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+    raf = shown || Math.abs(tx - x) > .5 ? requestAnimationFrame(frame) : 0;
+  }
+  function place(e) {
+    const w = peek.offsetWidth || 300, h = peek.offsetHeight || 220;
+    let nx = e.clientX + 28, ny = e.clientY - h / 2;
+    if (nx + w > innerWidth - 12) nx = e.clientX - w - 28;            // flip to the left near the edge
+    ny = Math.max(12, Math.min(innerHeight - h - 12, ny));
+    tx = nx; ty = ny;
+  }
+  rows.forEach(a => {
+    a.addEventListener('pointerenter', e => {
+      const d = info(a);
+      img.src = d.src; urlEl.textContent = d.host; cap.textContent = d.label + ' ↗';
+      peek.style.setProperty('--c', getComputedStyle(a).getPropertyValue('--c'));
+      place(e);
+      if (!shown) { x = tx; y = ty + 14; lastX = tx; }
+      shown = true; peek.classList.add('on');
+      if (!raf) raf = requestAnimationFrame(frame);
+    });
+    a.addEventListener('pointermove', place);
+    a.addEventListener('pointerleave', () => { shown = false; peek.classList.remove('on'); });
+  });
+  addEventListener('scroll', () => { if (shown) { shown = false; peek.classList.remove('on'); } }, { passive: true });
+})();
+
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');
 const offsetEl = document.getElementById('offset');
@@ -677,6 +791,20 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
   if (!canvas) return;
   const g = canvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, blades = [], visible = true, t = 0, last = 0;
+  // the light follows the time of day in India: morning dew, sunset glow, fireflies at night
+  const chip = document.querySelector('.banner .chip');
+  let phase = 'day', flies = [];
+  function updatePhase() {
+    const h = istHour();
+    phase = h >= 5 && h < 8 ? 'morning' : h >= 8 && h < 17 ? 'day' : h >= 17 && h < 19.5 ? 'sunset' : 'night';
+    if (chip) chip.textContent = phase === 'day' ? 'tall grass' : `tall grass · ${phase}`;
+    canvas.setAttribute('aria-label', `A field of tall grass at ${phase === 'day' ? 'midday' : phase} in India, swaying in the wind. Move the cursor through it to make it rustle.`);
+  }
+  function makeFlies() {
+    flies = Array.from({ length: Math.round(W / 45) }, () => ({
+      x: Math.random() * W, y: H * (0.25 + Math.random() * 0.6), p: Math.random() * 6.3, s: 0.4 + Math.random() * 0.6,
+    }));
+  }
   let ink = '#8a8a84', inkDark = '#3d3d39';
   const pointer = { x: -999, y: -999, vx: 0, speed: 0, inside: false, lastMove: 0 };
 
@@ -698,6 +826,7 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
         a: 0, v: 0,                             // bend angle and its speed
         w: 0.7 + Math.random() * 0.8,
         dark: Math.random() < 0.28,
+        dew: Math.random() < 0.35,
       };
     });
   }
@@ -707,7 +836,7 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
     W = r.width; H = r.height;
     canvas.width = W * dpr; canvas.height = H * dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    makeBlades(); draw();
+    makeBlades(); makeFlies(); draw();
   }
 
   function step(dt) {
@@ -729,8 +858,32 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
       b.a = Math.max(-1.1, Math.min(1.1, b.a + b.v * k));
     }
   }
+  function sky() {
+    const dark = root.dataset.theme === 'dark';
+    const tints = {
+      morning: [['rgba(255,214,170,', dark ? .16 : .38], ['rgba(255,240,220,', 0]],
+      sunset:  [['rgba(255,138,80,', dark ? .22 : .34], ['rgba(255,196,140,', dark ? .08 : .14]],
+      night:   [['rgba(18,26,58,', dark ? .45 : .62], ['rgba(18,26,58,', dark ? .2 : .32]],
+    }[phase];
+    if (!tints) return;
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, tints[0][0] + tints[0][1] + ')');
+    grad.addColorStop(1, tints[1][0] + tints[1][1] + ')');
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  }
+  function fireflies() {
+    for (const f of flies) {
+      const x = f.x + Math.sin(t * f.s + f.p) * 18, y = f.y + Math.cos(t * f.s * 0.8 + f.p * 1.3) * 10;
+      const glow = 0.35 + 0.65 * Math.max(0, Math.sin(t * 1.6 * f.s + f.p * 2));
+      const r = g.createRadialGradient(x, y, 0, x, y, 7);
+      r.addColorStop(0, `rgba(255,236,140,${(0.95 * glow).toFixed(3)})`);
+      r.addColorStop(1, 'rgba(255,236,140,0)');
+      g.fillStyle = r; g.fillRect(x - 7, y - 7, 14, 14);
+    }
+  }
   function draw() {
     g.clearRect(0, 0, W, H);
+    sky();
     g.lineCap = 'round';
     for (const pass of [false, true]) {          // light blades behind, darker ones in front
       g.strokeStyle = pass ? inkDark : ink;
@@ -741,9 +894,14 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
         const midX = b.x + Math.sin(b.a * 0.45) * b.h * 0.55, midY = H - b.h * 0.55;
         g.lineWidth = b.w;
         g.beginPath(); g.moveTo(b.x, H + 2); g.quadraticCurveTo(midX, midY, tipX, tipY); g.stroke();
+        if (phase === 'morning' && b.dew) {               // a drop of dew on the tip
+          g.save(); g.globalAlpha = 0.95; g.fillStyle = 'rgba(190,225,255,.95)';
+          g.beginPath(); g.arc(tipX, tipY + 1.5, 1.6, 0, 7); g.fill(); g.restore();
+        }
       }
     }
     g.globalAlpha = 1;
+    if (phase === 'night') fireflies();
   }
   function frame(now) {
     const dt = Math.min((now - (last || now)) / 1000, 0.05); last = now;
@@ -784,6 +942,7 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
     new IntersectionObserver(([en]) => (visible = en.isIntersecting)).observe(canvas);
   addEventListener('resize', () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 150); });
 
+  updatePhase(); setInterval(() => { updatePhase(); draw(); }, 60000);
   readInk(); resize();
   if (reduceMotion) { draw(); return; }        // still grass, no animation
   requestAnimationFrame(frame);
