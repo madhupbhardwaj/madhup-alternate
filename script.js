@@ -494,6 +494,39 @@ function trackEyes(face) {
 }
 if ($('face')) trackEyes($('face'));
 
+/* ---------- Quotes that fill in as you scroll ----------
+   Each word starts faint and darkens, left to right, as the quote moves up the
+   screen: half-way through the screen it's completely filled. */
+(() => {
+  const quotes = [...document.querySelectorAll('.fill')];
+  if (!quotes.length) return;
+  quotes.forEach(q => {
+    q.setAttribute('aria-label', q.textContent.trim());
+    q.innerHTML = q.textContent.trim().split(/(\s+)/)
+      .map(part => /^\s+$/.test(part) ? part : `<span class="w" aria-hidden="true">${part}</span>`).join('');
+    q._words = [...q.querySelectorAll('.w')];
+  });
+  if (reduceMotion) { quotes.forEach(q => q._words.forEach(w => w.style.setProperty('--o', 1))); return; }
+  let queued = false;
+  function update() {
+    queued = false;
+    const vh = innerHeight, start = vh * 0.9, end = vh * 0.45;
+    for (const q of quotes) {
+      const top = q.getBoundingClientRect().top;
+      const p = Math.min(1, Math.max(0, (start - top) / (start - end)));
+      const n = q._words.length;
+      q._words.forEach((w, i) => {
+        const o = Math.min(1, Math.max(0, p * (n + 1.5) - i));   // each word fades in after the one before it
+        w.style.setProperty('--o', (0.2 + 0.8 * o).toFixed(3));
+      });
+    }
+  }
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+  addEventListener('scroll', queue, { passive: true });
+  addEventListener('resize', queue);
+  update();
+})();
+
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');
 const offsetEl = document.getElementById('offset');

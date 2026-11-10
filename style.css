@@ -249,16 +249,23 @@ h2[data-type] { cursor: default; -webkit-tap-highlight-color: transparent; }
   .welcome { padding: 0 16px; }
 }
 
-/* ---------- "me" page ---------- */
+/* ---------- "me" page: one plain, readable piece of writing ---------- */
 .nav-links a.here { color: var(--fg); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-.me-head .col { padding-top: 28px; padding-bottom: 32px; }
 .back { font-size: 12px; color: var(--muted); }
 .back:hover { color: var(--fg); }
-.me-intro { display: flex; align-items: center; gap: 20px; margin-top: 22px; }
-.me-avatar { width: 96px; height: 96px; border-radius: 20px; box-shadow: none; }
-.me-head h1 { font-size: 40px; }
+.prose { border-bottom: 0; }
+.prose .col { padding-top: 32px; padding-bottom: 72px; }
+.hey { font: italic 400 46px/1.1 var(--serif); color: var(--fg); margin: 28px 0 22px; min-height: 1.1em; }
+.prose p { font: 17px/1.95 var(--sans); color: var(--text); max-width: 64ch; margin-bottom: 26px; }
+.prose a.dot { color: var(--fg); border-bottom: 1px dashed var(--muted); transition: border-color .15s; }
+.prose a.dot:hover { border-bottom-style: solid; border-color: var(--fg); }
+/* quotes that fill in, word by word, from left to right as they scroll into view */
+.fill { margin: 40px 0 40px; padding: 2px 0 2px 22px; border-left: 2px solid var(--line); font: italic 400 32px/1.35 var(--serif); color: var(--fg); max-width: 30ch; }
+.fill .w { opacity: var(--o, .2); transition: opacity .12s linear; }
+.sign { font: italic 400 24px/1 var(--serif) !important; color: var(--fg) !important; margin-top: 36px; }
 @media (max-width: 640px) {
-  .me-intro { gap: 14px; }
-  .me-avatar { width: 76px; height: 76px; border-radius: 16px; }
-  .me-head h1 { font-size: 30px; }
+  .prose .col { padding-bottom: 56px; }
+  .hey { font-size: 38px; }
+  .prose p { font-size: 16px; line-height: 1.85; }
+  .fill { font-size: 25px; padding-left: 16px; margin: 32px 0; }
 }
