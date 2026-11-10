@@ -71,8 +71,7 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- Hero ---------- */
 .hero-band .col { padding: 0 0 28px; }
 .banner { position: relative; height: 240px; }
-#field { display: block; width: 100%; height: 100%; background-color: var(--soft); background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 16px 16px; cursor: ew-resize; touch-action: pan-y; border-bottom: 1px dotted var(--line); }
-.pen { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--fg); pointer-events: none; transition: opacity .4s; box-shadow: 0 0 0 3px color-mix(in srgb, var(--fg) 12%, transparent); }
+#field { display: block; width: 100%; height: 100%; background-color: var(--soft); background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 16px 16px; cursor: crosshair; touch-action: pan-y; border-bottom: 1px dotted var(--line); }
 .hint { position: absolute; left: 12px; top: 10px; font-size: 11px; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }
 .banner:hover .hint { opacity: 1; }
 @media (hover: none) { .hint { opacity: 1; } }

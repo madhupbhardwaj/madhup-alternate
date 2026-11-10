@@ -161,35 +161,23 @@ const sfx = (() => {
       mallet(783.99, { gain: 0.07, dur: 0.5 });
       mallet(1174.66, { gain: 0.06, dur: 0.8, delay: 0.09 });
     },
-    // Two notes in the ratio a:b, struck together, then a quiet sustained
-    // hum of the same interval that fades out over `hold` seconds.
-    interval(a, b, hold = 10) {
-      if (!ready()) return;
-      const base = 196 * (a <= 2 ? 1.5 : 1); // keep every interval in a comfy range
-      const f1 = base, f2 = base * b / a;
-      mallet(f1, { gain: 0.08, dur: 1.8 });
-      mallet(f2, { gain: 0.07, dur: 1.8, delay: 0.09 });
-      this.stopDrone();
-      const t = ctx.currentTime;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.025, t + 0.8);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + hold);
-      g.connect(bus);
-      const oscs = [f1, f2].map(f => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + hold + 0.1); return o; });
-      drone = { g, oscs };
+    // rustle: a handful of tiny filtered-noise grains, like brushing through leaves.
+    // `level` (0..1) follows how fast the cursor moves: faster = louder, denser, brighter.
+    rustle(level) {
+      if (!ready() || level <= 0.02) return;
+      const grains = 1 + Math.round(level * 4);
+      for (let i = 0; i < grains; i++) {
+        burst({
+          freq: 1600 + Math.random() * (2500 + level * 3500),
+          q: 0.7 + Math.random() * 1.6,
+          dur: 0.012 + Math.random() * 0.035,
+          gain: (0.02 + Math.random() * 0.045) * level,
+        });
+      }
+      // now and then a softer, lower swish under the crackle
+      if (Math.random() < 0.25 + level * 0.4)
+        burst({ freq: 650 + Math.random() * 500, q: 0.8, dur: 0.07 + Math.random() * 0.06, gain: 0.04 * level });
     },
-    stopDrone() {
-      if (!drone || !ctx) return;
-      const t = ctx.currentTime;
-      drone.g.gain.cancelScheduledValues(t);
-      drone.g.gain.setValueAtTime(Math.max(drone.g.gain.value, 0.0001), t);
-      drone.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
-      drone.oscs.forEach(o => { try { o.stop(t + 0.3); } catch (e) {} });
-      drone = null;
-    },
-    // light tick while dragging between ratios
-    notch() { if (ready()) burst({ freq: 2600, q: 4, dur: 0.015, gain: 0.03 }); },
   };
 })();
 
@@ -485,42 +473,37 @@ function tick() {
 tick(); setInterval(tick, 15000);
 document.getElementById('year').textContent = new Date().getFullYear();
 
-/* ---------- Harmonograph banner ----------
-   A pen traces x = sin(a·s + φ)·e^(−ks), y = sin(b·s)·e^(−ks).
-   The ratio a:b is the same ratio as the two notes you hear. */
+/* ---------- Tall grass banner ----------
+   Thin ink blades sway in a gentle breeze. Moving the cursor (or a finger)
+   through them pushes them aside, and they rustle: the faster you move,
+   the louder and brighter the rustle. */
 (() => {
   const canvas = document.getElementById('field');
-  const chip = document.querySelector('.chip');
   const g = canvas.getContext('2d');
-  const ratios = [
-    [1, 2, 'octave'], [2, 3, 'perfect fifth'], [3, 4, 'perfect fourth'],
-    [3, 5, 'major sixth'], [4, 5, 'major third'], [5, 6, 'minor third'],
-  ];
-  const DRAW_SECONDS = 16, HOLD_SECONDS = 4;
-  let S_END = 64, K = 0.026;
-  let ri = 1, s = 0, W = 0, H = 0, dpr = 1, phase0 = 0, last = 0, holdUntil = 0, visible = true;
-  let ink = '#1a1a18', pen;
+  let W = 0, H = 0, dpr = 1, blades = [], visible = true, t = 0, last = 0;
+  let ink = '#8a8a84', inkDark = '#3d3d39';
+  const pointer = { x: -999, y: -999, vx: 0, speed: 0, inside: false, lastMove: 0 };
 
-  const pt = v => {
-    const [a, b] = ratios[ri];
-    const e = Math.exp(-K * v), phi = phase0 + 0.012 * v;
-    return [W / 2 + Math.sin(a * v + phi) * e * W * 0.36,
-            H / 2 + Math.sin(b * v) * e * H * 0.4];
-  };
-  function readInk() { ink = getComputedStyle(root).getPropertyValue('--muted').trim() || '#8a8a84'; }
-
-  function drawRange(from, to) {
-    const step = 0.012;
-    g.strokeStyle = ink; g.lineWidth = 1; g.globalAlpha = 1; g.lineJoin = g.lineCap = 'round';
-    g.beginPath();
-    let [x, y] = pt(from); g.moveTo(x, y);
-    for (let v = from + step; v < to; v += step) { [x, y] = pt(v); g.lineTo(x, y); }
-    [x, y] = pt(to); g.lineTo(x, y);
-    g.stroke(); g.globalAlpha = 1;
+  function readInk() {
+    const cs = getComputedStyle(root);
+    ink = cs.getPropertyValue('--muted').trim() || ink;
+    inkDark = cs.getPropertyValue('--text').trim() || inkDark;
   }
-  function redraw() {          // repaint everything drawn so far (resize / theme change)
-    g.clearRect(0, 0, W, H);
-    if (s > 0) drawRange(0, s);
+  function makeBlades() {
+    const n = Math.round(W / 3.6);
+    blades = Array.from({ length: n }, (_, i) => {
+      const x = (i + Math.random() * 0.9) * (W / n);
+      return {
+        x,
+        h: H * (0.32 + Math.random() * 0.5) * (0.85 + 0.15 * Math.sin(x / W * 6.3 + 1)),  // gentle hills of height
+        lean: (Math.random() - 0.5) * 0.25,     // natural resting tilt
+        stiff: 0.06 + Math.random() * 0.05,     // spring back strength
+        phase: Math.random() * Math.PI * 2,
+        a: 0, v: 0,                             // bend angle and its speed
+        w: 0.7 + Math.random() * 0.8,
+        dark: Math.random() < 0.28,
+      };
+    });
   }
   function resize() {
     dpr = Math.min(devicePixelRatio || 1, 2);
@@ -528,72 +511,84 @@ document.getElementById('year').textContent = new Date().getFullYear();
     W = r.width; H = r.height;
     canvas.width = W * dpr; canvas.height = H * dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    redraw();
-    if (pen) redrawTip();
-  }
-  function setChip(i = ri) { const [a, b, name] = ratios[i]; chip.textContent = `${a} : ${b} · ${name}`; }
-
-  function start(index, withSound) {
-    ri = (index + ratios.length) % ratios.length;
-    // higher ratios wind faster, so give them fewer turns to keep every drawing equally calm
-    S_END = 100 / ratios[ri][1]; K = 1.6 / S_END;
-    s = 0; phase0 = Math.PI / 2 + (Math.random() - 0.5) * 0.6; holdUntil = 0;
-    g.clearRect(0, 0, W, H); setChip();
-    if (withSound) sfx.interval(ratios[ri][0], ratios[ri][1], DRAW_SECONDS * 0.8);
-    if (reduceMotion) { s = S_END; redraw(); }
+    makeBlades(); draw();
   }
 
+  function step(dt) {
+    t += dt;
+    const k = Math.min(dt * 60, 3);              // frame-rate independent
+    for (const b of blades) {
+      // breeze: slow travelling waves across the field
+      const wind = 0.07 * Math.sin(t * 0.9 + b.x * 0.012 + b.phase * 0.3) + 0.04 * Math.sin(t * 2.1 + b.x * 0.03);
+      let force = (wind + b.lean - b.a) * b.stiff;
+      // the cursor pushes blades it passes through, in the direction it's moving
+      if (pointer.inside) {
+        const dx = b.x - pointer.x, tipY = H - b.h;
+        if (Math.abs(dx) < 34 && pointer.y > tipY - 10) {
+          const near = 1 - Math.abs(dx) / 34;
+          force += pointer.vx * 0.0025 * near + Math.sign(dx || 1) * 0.02 * near;
+        }
+      }
+      b.v = (b.v + force * k) * Math.pow(0.9, k);
+      b.a = Math.max(-1.1, Math.min(1.1, b.a + b.v * k));
+    }
+  }
+  function draw() {
+    g.clearRect(0, 0, W, H);
+    g.lineCap = 'round';
+    for (const pass of [false, true]) {          // light blades behind, darker ones in front
+      g.strokeStyle = pass ? inkDark : ink;
+      g.globalAlpha = pass ? 0.75 : 0.9;
+      for (const b of blades) {
+        if (b.dark !== pass) continue;
+        const tipX = b.x + Math.sin(b.a) * b.h, tipY = H - Math.cos(b.a) * b.h;
+        const midX = b.x + Math.sin(b.a * 0.45) * b.h * 0.55, midY = H - b.h * 0.55;
+        g.lineWidth = b.w;
+        g.beginPath(); g.moveTo(b.x, H + 2); g.quadraticCurveTo(midX, midY, tipX, tipY); g.stroke();
+      }
+    }
+    g.globalAlpha = 1;
+  }
   function frame(now) {
     const dt = Math.min((now - (last || now)) / 1000, 0.05); last = now;
-    if (visible && !reduceMotion) {
-      if (s < S_END) {
-        const next = Math.min(S_END, s + dt * S_END / DRAW_SECONDS);
-        drawRange(s, next); s = next;
-        if (s >= S_END) holdUntil = now + HOLD_SECONDS * 1000;
-      } else if (holdUntil && now > holdUntil) {
-        start(ri + 1, false);  // moves on quietly by itself; sound only when you touch it
-      }
-      // pen tip
-      pen.style.opacity = s < S_END ? 1 : 0;
-      if (s < S_END) redrawTip();
+    if (visible) {
+      if (now - pointer.lastMove > 60) { pointer.vx *= 0.8; pointer.speed *= 0.8; }
+      step(dt); draw();
     }
     requestAnimationFrame(frame);
   }
-  // pen tip: a small dot positioned over the canvas
-  pen = document.createElement('span');
-  pen.className = 'pen'; canvas.after(pen);
-  if (reduceMotion) pen.style.opacity = 0;
-  function redrawTip() {
-    const [x, y] = pt(s);
-    pen.style.transform = `translate(${x}px, ${y}px)`;
+
+  // cursor / finger tracking + rustle sound
+  let prev = null, lastRustle = 0;
+  function move(e) {
+    const r = canvas.getBoundingClientRect(), now = performance.now();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (prev) {
+      const dt = Math.max(now - prev.t, 8);
+      pointer.vx = (x - prev.x) / dt * 16;      // px per frame-ish
+      pointer.speed = Math.hypot(x - prev.x, y - prev.y) / dt;   // px per ms
+    }
+    prev = { x, y, t: now };
+    Object.assign(pointer, { x, y, inside: true, lastMove: now });
+    // only rustle when actually moving through the grass (below the tallest tips)
+    const inGrass = y > H * 0.15;
+    if (inGrass && now - lastRustle > 28) {
+      lastRustle = now;
+      sfx.rustle(Math.min(1, pointer.speed / 1.4));
+    }
   }
+  canvas.addEventListener('pointermove', move);
+  canvas.addEventListener('pointerdown', e => { prev = null; move(e); });
+  canvas.addEventListener('pointerleave', () => { pointer.inside = false; prev = null; });
+  canvas.addEventListener('pointercancel', () => { pointer.inside = false; prev = null; });
 
-  // Drag left/right to pick a ratio; a plain click moves to the next one.
-  let dragging = false, moved = false, downX = 0, picked = ri;
-  const indexAt = x => Math.min(ratios.length - 1, Math.max(0, Math.floor(x / W * ratios.length)));
-  canvas.addEventListener('pointerdown', e => {
-    dragging = true; moved = false; downX = e.clientX; picked = ri;
-    canvas.setPointerCapture(e.pointerId);
-  });
-  canvas.addEventListener('pointermove', e => {
-    if (!dragging || Math.abs(e.clientX - downX) < 8) return;
-    moved = true;
-    const i = indexAt(e.clientX - canvas.getBoundingClientRect().left);
-    if (i !== picked) { picked = i; setChip(picked); sfx.notch(); }
-  });
-  canvas.addEventListener('pointerup', () => {
-    if (!dragging) return;
-    dragging = false;
-    start(moved ? picked : ri + 1, true);
-  });
-  canvas.addEventListener('pointercancel', () => { dragging = false; setChip(); });
-
-  new MutationObserver(() => { readInk(); redraw(); })
+  new MutationObserver(() => { readInk(); draw(); })
     .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
   if ('IntersectionObserver' in window)
     new IntersectionObserver(([en]) => (visible = en.isIntersecting)).observe(canvas);
   addEventListener('resize', () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 150); });
 
-  readInk(); resize(); start(1, false);
+  readInk(); resize();
+  if (reduceMotion) { draw(); return; }        // still grass, no animation
   requestAnimationFrame(frame);
 })();

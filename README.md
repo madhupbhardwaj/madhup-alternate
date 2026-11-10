@@ -5,7 +5,7 @@ My personal portfolio. Plain HTML, CSS and JavaScript, with no build step and no
 ```
 index.html    page content (edit projects, about, books, links here)
 style.css     all styling; colours are the variables at the top
-script.js     typing effect, sound effects, clock, dark mode, harmonograph banner
+script.js     typing effect, sound effects, clock, dark mode, tall-grass banner
 favicon.svg   tab icon
 404.html      "page not found" page
 ```
@@ -25,5 +25,5 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 ## Customise
 - **Avatar:** the line drawing is embedded in `index.html` (inside `.avatar`) so its eyes can follow the cursor and blink; `avatar.svg` is the same drawing as a standalone file. How far the pupils move is set by `RX`, `UP` and `DOWN` in `script.js`.
 - **Sounds:** generated in code with the Web Audio API (no audio files). Visitors can switch them off with the speaker icon or "sound on" in the footer. Browsers only allow sound after the first click/tap/keypress on the page.
-- **Banner:** a harmonograph — a pen tracing two combined waves. Drag left/right to pick a ratio (1:2 octave … 5:6 minor third), or click/tap for the next one. You hear the same two notes the curve is drawn from. The list of ratios is the `ratios` array in `script.js`.
+- **Banner:** a field of tall grass drawn on a canvas. It sways in a breeze, parts as the cursor or a finger moves through it, and rustles (generated noise grains, louder the faster you move). Look for "Tall grass banner" in `script.js`.
 - **"more about me" questions:** edit the `QUESTIONS` list near the bottom of `script.js`. Each `{ q: '...', a: '...' }` becomes a question button, and the answer is typed out in the speech bubble next to the avatar.
