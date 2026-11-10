@@ -120,6 +120,12 @@ const sfx = (() => {
       mallet(a, { gain: 0.07, dur: 0.8 });
       mallet(b, { gain: 0.07, dur: 1.0, delay: 0.08 });
     },
+    // a cheerful little "hi!" — two quick rising notes
+    hi() {
+      if (!ready()) return;
+      mallet(783.99, { gain: 0.07, dur: 0.5 });
+      mallet(1174.66, { gain: 0.06, dur: 0.8, delay: 0.09 });
+    },
     // Two notes in the ratio a:b, struck together, then a quiet sustained
     // hum of the same interval that fades out over `hold` seconds.
     interval(a, b, hold = 10) {
@@ -160,6 +166,25 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('[data-sfx]')) sfx.click();
 });
 // Soft tick when moving across projects / pills
+// Avatar says "hi :)" on hover (mouse) or tap (touch)
+(() => {
+  const av = document.getElementById('avatar');
+  let hideTimer, lastHi = 0;
+  const say = () => {
+    clearTimeout(hideTimer);
+    if (!av.classList.contains('say') && performance.now() - lastHi > 600) { sfx.hi(); lastHi = performance.now(); }
+    av.classList.add('say');
+  };
+  const quiet = () => av.classList.remove('say');
+  av.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') say(); });
+  av.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') quiet(); });
+  av.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return;
+    sfx.unlock(); say();
+    hideTimer = setTimeout(quiet, 2200);
+  });
+})();
+
 document.querySelectorAll('.projects a, .pill').forEach(el =>
   el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.hover(); }));
 
