@@ -32,7 +32,6 @@
     about: "i'm madhup, a high school student in india who loves mathematics.\ni build small tools around how i learn, and share the ideas along the way.\nstill learning, always building.",
     now: "jee 2028 is the big one right now.\nbuilding things is the passion that runs alongside it.",
     whymath: "it's the most logical thing there is. everything is rigorous, and if you're\nbrave enough, you can derive it yourself. it doesn't always show up in real\nlife, but i'm here for the love of the game.",
-    badat: "art, and i'll own it. drawing is not my strong suit.",
   };
 
   // ---------- helpers ----------
@@ -59,8 +58,6 @@
         .map(([n, c]) => `  <span class="g">${pad(n + (c.args ? ' ' + c.args : ''), 18)}</span><span class="dim">${esc(c.help)}</span>`).join('\n') +
       '\n\n<span class="dim">tip: tab completes, ↑ ↓ scroll through history, ctrl+l clears.</span>') },
     about:    { help: 'who i am',                     run: () => TEXT.about },
-    now:      { help: "what i'm working towards",     run: () => TEXT.now },
-    whymath:  { help: 'why mathematics',              run: () => TEXT.whymath },
     projects: { help: 'things i have built',          run: () => html(
       PROJECTS.map(p => `  <span class="b">${pad(p.name, 14)}</span>${esc(p.desc)}`).join('\n') +
       '\n\n<span class="dim">type</span> open &lt;name&gt; <span class="dim">to visit one, e.g.</span> open problemset\n' +
@@ -76,7 +73,6 @@
     books:    { help: "what's on my shelf",           run: () => html(
       BOOKS.map(([t, a]) => `  <span class="y">${pad(t, 32)}</span><span class="dim">${esc(a)}</span>`).join('\n') +
       '\n\n<span class="dim">the one that changed how i think:</span> the almanack of naval ravikant.') },
-    badat:    { help: "what i'm not good at",         run: () => TEXT.badat },
     contact:  { help: 'how to reach me',              run: () => html(
       `  linkedin   ${link('linkedin.com/in/madhup-bhardwaj', LINKS.linkedin)}\n  github     ${link('github.com/madhupbhardwaj', LINKS.github)}`) },
     github:   { help: 'open my github',               run: () => { go(LINKS.github, true); return html(`opening ${link('github', LINKS.github)}…`); } },
@@ -90,7 +86,6 @@
     date:     { help: 'my time in india',             run: () =>
       new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', hour: 'numeric', minute: '2-digit', day: 'numeric', month: 'long' }).toLowerCase() + ' (india)' },
     echo:     { help: 'repeat after you', args: '<text>', run: args => args.join(' ') },
-    history:  { help: "what you've typed",            run: () => past.map((c, i) => `  ${String(i + 1).padStart(3)}  ${c}`).join('\n') || '(nothing yet)' },
     theme:    { help: 'switch light / dark', args: '[light|dark]', run: ([m]) => {
       const next = m === 'light' || m === 'dark' ? m : (root.dataset.theme === 'dark' ? 'light' : 'dark');
       root.dataset.theme = next; store.set('theme', next);
@@ -124,7 +119,7 @@
     rm:       { run: () => html('<span class="err">rm: nice try.</span>') },
   };
   // a few friendly aliases
-  Object.assign(COMMANDS, { reading: { run: COMMANDS.books.run }, socials: { run: COMMANDS.contact.run }, jee: { run: COMMANDS.now.run }, ll: { run: COMMANDS.ls.run }, cls: { run: COMMANDS.clear.run } });
+  Object.assign(COMMANDS, { reading: { run: COMMANDS.books.run }, socials: { run: COMMANDS.contact.run }, ll: { run: COMMANDS.ls.run }, cls: { run: COMMANDS.clear.run } });
 
   // ---------- printing ----------
   function print(content, cls) {
