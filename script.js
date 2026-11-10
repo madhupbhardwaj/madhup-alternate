@@ -2,6 +2,7 @@
    madhup.  — small bits of behaviour, no libraries.
    ========================================================= */
 const root = document.documentElement;
+const $ = id => document.getElementById(id);   // pages share this script; parts skip themselves if their elements aren't on the page
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -12,7 +13,7 @@ const store = {
 if (!root.dataset.theme) {
   root.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
-document.getElementById('themeBtn').addEventListener('click', () => {
+$('themeBtn')?.addEventListener('click', () => {
   root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
   store.set('theme', root.dataset.theme);
 });
@@ -191,7 +192,8 @@ document.addEventListener('keydown', e => {
 // Soft tick when moving across projects / pills
 // Avatar speech bubble: says "hi :)" on hover/tap, and types out answers to questions.
 const avatarTalk = (() => {
-  const av = document.getElementById('avatar');
+  const av = $('avatar');
+  if (!av) return { answer() {}, hide() {}, isAnswering: () => false };
   const bubble = av.querySelector('.bubble');
   let hideTimer, typeTimer, lastHi = 0, answering = false;
 
@@ -266,7 +268,8 @@ const QUESTIONS = [
     a: "the almanack of naval ravikant. one of the most eye-opening books out there, and somehow still overlooked." },
 ];
 (() => {
-  const btn = document.getElementById('askBtn');
+  const btn = $('askBtn');
+  if (!btn) return;
   const panel = document.getElementById('ask');
   const list = document.getElementById('questions');
   const live = document.getElementById('answerLive');
@@ -299,7 +302,7 @@ const QUESTIONS = [
   document.querySelectorAll(sel).forEach((el, i) =>
     el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.bubble(base + i); })));
 // question chips are created later, so listen on their container
-document.getElementById('questions').addEventListener('pointerover', e => {
+$('questions')?.addEventListener('pointerover', e => {
   const q = e.target.closest('.q');
   if (!q || e.pointerType !== 'mouse' || q.contains(e.relatedTarget)) return;
   sfx.bubble(3 + [...q.parentNode.children].indexOf(q));
@@ -318,7 +321,7 @@ if (matchMedia('(hover: none)').matches && 'IntersectionObserver' in window) {
 
 // Sound toggle (nav icon + footer text)
 const soundText = document.getElementById('soundText');
-function syncSoundLabel() { soundText.textContent = root.dataset.sound === 'off' ? 'sound off' : 'sound on'; }
+function syncSoundLabel() { if (soundText) soundText.textContent = root.dataset.sound === 'off' ? 'sound off' : 'sound on'; }
 function toggleSound() {
   sfx.unlock();
   const off = root.dataset.sound !== 'off';
@@ -327,8 +330,8 @@ function toggleSound() {
   store.set('sound', off ? 'off' : 'on');
   syncSoundLabel();
 }
-document.getElementById('soundBtn').addEventListener('click', toggleSound);
-soundText.addEventListener('click', toggleSound);
+$('soundBtn')?.addEventListener('click', toggleSound);
+soundText?.addEventListener('click', toggleSound);
 syncSoundLabel();
 
 /* ---------- Typing ---------- */
@@ -356,8 +359,9 @@ function retype(el, speed) {
    taps or presses a key, so this screen asks for exactly that, then lets the
    page start typing with sound. Returning visitors never see it. */
 const entered = new Promise(resolve => {
-  if ('welcomed' in root.dataset) { document.getElementById('welcome').remove(); return resolve(); }
-  const screen = document.getElementById('welcome');
+  const screen = $('welcome');
+  if (!screen) return resolve();                // pages without a welcome screen
+  if ('welcomed' in root.dataset) { screen.remove(); return resolve(); }
   // a second copy of the face, with its own clip-path ids, so its eyes can move too
   const face = document.getElementById('face').cloneNode(true);
   face.id = 'faceWelcome';
@@ -389,11 +393,11 @@ const entered = new Promise(resolve => {
 });
 
 // Hero subtitle
-const typed = document.getElementById('typed');
-entered.then(() => setTimeout(() => typeInto(typed, typed.dataset.text, { speed: 60 }), 350));
+const typed = $('typed');
+if (typed) entered.then(() => setTimeout(() => typeInto(typed, typed.dataset.text, { speed: 60 }), 350));
 
 // Click (or tap) the name to retype the subtitle
-document.getElementById('nameBtn').addEventListener('click', () => retype(typed, 60));
+$('nameBtn')?.addEventListener('click', () => retype(typed, 60));
 
 // Section headings type themselves in as they scroll into view
 const heads = document.querySelectorAll('[data-type]');
@@ -488,7 +492,7 @@ function trackEyes(face) {
     }, 2800 + Math.random() * 4200);
   })();
 }
-trackEyes(document.getElementById('face'));
+if ($('face')) trackEyes($('face'));
 
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');
@@ -507,15 +511,16 @@ function tick() {
     offsetEl.textContent = `// ${h ? h + 'h ' : ''}${m ? m + 'm ' : ''}${diff > 0 ? 'ahead' : 'behind'}`;
   }
 }
-tick(); setInterval(tick, 15000);
-document.getElementById('year').textContent = new Date().getFullYear();
+if (clock) { tick(); setInterval(tick, 15000); }
+if ($('year')) $('year').textContent = new Date().getFullYear();
 
 /* ---------- Tall grass banner ----------
    Thin ink blades sway in a gentle breeze. Moving the cursor (or a finger)
    through them pushes them aside, and they rustle: the faster you move,
    the louder and brighter the rustle. */
 (() => {
-  const canvas = document.getElementById('field');
+  const canvas = $('field');
+  if (!canvas) return;
   const g = canvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, blades = [], visible = true, t = 0, last = 0;
   let ink = '#8a8a84', inkDark = '#3d3d39';

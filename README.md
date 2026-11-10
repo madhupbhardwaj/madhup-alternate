@@ -4,6 +4,7 @@ My personal portfolio. Plain HTML, CSS and JavaScript, with no build step and no
 
 ```
 index.html    page content (edit projects, about, books, links here)
+me.html       the "me" page: everything about me, linked from the nav
 style.css     all styling; colours are the variables at the top
 script.js     typing effect, sound effects, clock, dark mode, tall-grass banner
 favicon.svg   tab icon
@@ -28,3 +29,4 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 - **Banner:** a field of tall grass drawn on a canvas. It sways in a breeze, parts as the cursor or a finger moves through it, and rustles (generated noise grains, louder the faster you move). Look for "Tall grass banner" in `script.js`.
 - **"more about me" questions:** edit the `QUESTIONS` list near the bottom of `script.js`. Each `{ q: '...', a: '...' }` becomes a question button, and the answer is typed out in the speech bubble next to the avatar.
 - **Welcome screen:** first-time visitors see a short "hi! welcome to my portfolio" screen. Browsers block all sound until the visitor clicks, taps or presses a key, so this one tap is what lets the typing and other sounds play from the very first scroll. It's remembered in the browser, so returning visitors skip it. To show it again while testing, run `localStorage.removeItem('welcomed')` in the browser console and reload.
+- **"me" page:** `me.html` uses the same `style.css` and `script.js`. To add a section, copy one block (the hatch strip, the `<section>` with its `<h2 data-type>`, and the body after it) and change the heading and text.
