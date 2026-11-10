@@ -532,7 +532,7 @@ const entered = new Promise(resolve => {
     if (e.type === 'keydown' && ['Tab', 'Shift', 'Alt', 'Control', 'Meta'].includes(e.key)) return;
     done = true;
     sfx.unlock();
-    store.set('welcomed', '1');
+    try { sessionStorage.setItem('welcomed', '1'); } catch (e) {}   // once per visit (per tab)
     setTimeout(() => sfx.hi(), 150);   // give the audio engine a moment to wake up
     screen.classList.add('leaving');
     setTimeout(() => { root.dataset.welcomed = ''; screen.remove(); resolve(); }, reduceMotion ? 0 : 480);

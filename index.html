@@ -26,7 +26,9 @@
   try {
     var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t;
     if (localStorage.getItem('sound') === 'off') document.documentElement.dataset.sound = 'off';
-    if (localStorage.getItem('welcomed')) document.documentElement.dataset.welcomed = '';
+    // the welcome screen shows once per visit (per tab): new tabs see it again, reloads skip it
+    if (sessionStorage.getItem('welcomed')) document.documentElement.dataset.welcomed = '';
+    localStorage.removeItem('welcomed');   // tidy up the old once-ever flag
   } catch (e) {}
 </script>
 </head>
