@@ -343,9 +343,16 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 } else {
   heads.forEach(h => (h.textContent = h.dataset.text));
 }
-// Hover (mouse) or tap (touch) a heading to watch it type again
+// Rest the cursor on a heading for 2 seconds (or tap it on a phone) to watch it type again
+const HOVER_DELAY = 2000;
 heads.forEach(h => {
-  h.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') retype(h, 70); });
+  let hoverTimer;
+  h.addEventListener('pointerenter', e => {
+    if (e.pointerType !== 'mouse') return;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => retype(h, 70), HOVER_DELAY);
+  });
+  h.addEventListener('pointerleave', () => clearTimeout(hoverTimer));
   h.addEventListener('click', () => retype(h, 70));   // taps on phones (scroll-drags don't count)
 });
 
