@@ -55,7 +55,101 @@
 
     <div class="profile">
       <div class="avatar-wrap" id="avatar">
-        <div class="avatar"><img src="avatar.svg" alt="Line drawing of Madhup" width="116" height="116"></div>
+        <div class="avatar">
+          <svg id="face" role="img" aria-label="Line drawing of Madhup" xmlns="http://www.w3.org/2000/svg" viewBox="30 34 186 186" fill="none" stroke="#1a1a18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- shoulders -->
+            <path d="M4 240 C16 226 50 216 88 212"/>
+            <path d="M236 240 C224 226 192 216 156 212"/>
+            <!-- neck -->
+            <path d="M100 186 L99 208"/>
+            <path d="M144 184 L145 206"/>
+            <path d="M106 204 C112 206 118 206 122 205" stroke-width="1.2" stroke-opacity=".5"/>
+            <!-- mandarin collar -->
+            <path d="M88 212 C90 206 96 206 99 208 C112 216 132 216 145 206 C149 204 154 206 156 212"/>
+            <path d="M88 212 C90 222 98 226 106 228 C116 231 128 231 138 228 C146 226 154 222 156 212"/>
+            <path d="M122 230 L122 240"/>
+            <circle cx="122" cy="236" r="2.6" fill="#1a1a18" stroke="none"/>
+            <g stroke-width="1.3">
+              <path d="M40 232 l4 -4 l4 4 l-4 4 z"/>
+              <path d="M192 230 l4 -4 l4 4 l-4 4 z"/>
+              <path d="M70 230 l3 -3 l3 3 l-3 3 z"/>
+              <path d="M168 234 l3 -3 l3 3 l-3 3 z"/>
+              <path d="M18 238 l3 -3 l3 3"/>
+              <path d="M214 238 l3 -3 l3 3"/>
+            </g>
+
+            <!-- ears -->
+            <path d="M80 126 C66 118 60 146 76 156 C80 158 84 157 86 154"/>
+            <path d="M75 134 C72 140 74 146 79 149" stroke-width="1.5"/>
+            <path d="M166 126 C180 118 186 146 170 156 C166 158 162 157 160 154"/>
+            <path d="M171 134 C174 140 172 146 167 149" stroke-width="1.5"/>
+
+            <!-- face: soft rounded jaw -->
+            <path d="M81 108 C80 140 85 164 99 181 C108 191 116 195 123 195 C130 195 138 191 147 181 C161 164 166 140 165 108"/>
+
+            <!-- hair: flatter, swept to the right, locks curling at the ends -->
+            <path fill="#1a1a18" d="
+              M81 128
+              Q76 112 79 96
+              Q81 80 93 70
+              Q102 61 115 61
+              Q125 55 137 58
+              Q149 55 159 61
+              Q171 66 174 78
+              Q177 93 172 106
+              Q169 114 166 122
+              Q165 110 160 102
+              Q156 98 151 99
+              Q154 101 150 103
+              Q144 100 138 94
+              Q134 98 134 101
+              Q128 103 122 96
+              Q117 99 117 102
+              Q110 103 106 98
+              Q101 101 101 104
+              Q95 105 91 108
+              Q86 116 81 128 Z"/>
+            <g stroke="#fdfdfc" stroke-width="1.5">
+              <path d="M94 88 C106 74 126 68 146 70 c6 1 8 6 4 8"/>
+              <path d="M112 64 C128 60 144 60 158 66 c5 3 4 8 0 8"/>
+              <path d="M100 98 C108 90 118 86 128 86"/>
+              <path d="M150 84 c6 2 10 6 12 12"/>
+            </g>
+
+            <!-- eyebrows -->
+            <path fill="#1a1a18" stroke="none" d="M90 119 L100 110 L118 109 L117 115 L101 115 Z"/>
+            <path fill="#1a1a18" stroke="none" d="M128 109 L146 110 L156 119 L145 115 L129 115 Z"/>
+
+            <!-- eyes: pupils move to follow the cursor (see script.js) -->
+            <g class="eye" data-cx="105.5" data-cy="127">
+              <clipPath id="eyeL"><path d="M94 127 Q103 119 116 126.5 Q106 133 94 127 Z"/></clipPath>
+              <g clip-path="url(#eyeL)">
+                <g class="pupil"><circle cx="105.5" cy="127" r="5" fill="#1a1a18" stroke="none"/></g>
+                <g class="glint"><circle cx="107.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/></g>
+              </g>
+              <path class="lid" d="M94 127 Q103 119 116 126.5" data-open="M94 127 Q103 119 116 126.5" stroke-width="2.1"/>
+              <path d="M96 128.8 Q106 133.5 115 127.8" stroke-width="1.1" stroke-opacity=".55"/>
+            </g>
+            <g class="eye" data-cx="140.5" data-cy="127">
+              <clipPath id="eyeR"><path d="M130 127 Q139 119 152 126.5 Q142 133 130 127 Z"/></clipPath>
+              <g clip-path="url(#eyeR)">
+                <g class="pupil"><circle cx="140.5" cy="127" r="5" fill="#1a1a18" stroke="none"/></g>
+                <g class="glint"><circle cx="142.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/></g>
+              </g>
+              <path class="lid" d="M130 127 Q139 119 152 126.5" data-open="M130 127 Q139 119 152 126.5" stroke-width="2.1"/>
+              <path d="M132 128.8 Q142 133.5 151 127.8" stroke-width="1.1" stroke-opacity=".55"/>
+            </g>
+
+            <!-- nose -->
+            <path d="M123 130 L118 152 L122 155 L130 153" stroke-width="1.9"/>
+
+            <!-- mouth: small closed half-smile -->
+            <path d="M113 168.5 Q123.5 176 134 168.5"/>
+            <path d="M111.5 167.5 l2 1.6" stroke-width="1.3"/>
+            <path d="M135.5 167.5 l-2 1.6" stroke-width="1.3"/>
+
+          </svg>
+        </div>
         <span class="bubble" aria-hidden="true">hi :)</span>
       </div>
       <div>

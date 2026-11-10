@@ -105,7 +105,9 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
 }
 .avatar-wrap.say .bubble.long { transform: rotate(-1.5deg); }
 .bubble .tcaret { display: inline-block; width: 1.5px; height: 1em; background: var(--fg); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
-.avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.avatar img, .avatar svg { display: block; width: 100%; height: 100%; }
+/* the drawing keeps its own ink, whatever the theme (overrides the icon defaults above) */
+#face { fill: none; stroke: #1a1a18; stroke-width: 2; color: #1a1a18; }
 h1 { font: 400 40px/1.1 var(--serif); color: var(--fg); letter-spacing: -.01em; }
 .name-btn { font: inherit; color: inherit; letter-spacing: inherit; text-align: left; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .sub { font-size: 13px; color: var(--muted); min-height: 1.6em; margin-top: 4px; letter-spacing: .02em; }
@@ -157,14 +159,15 @@ h2[data-type] { cursor: default; -webkit-tap-highlight-color: transparent; }
 /* Projects */
 .projects { list-style: none; padding: 8px 0; }
 .projects li + li { border-top: 1px dotted var(--line); }
-.projects a { display: grid; grid-template-columns: 10px 1fr auto; gap: 16px; align-items: baseline; padding: 16px 12px; margin: 0 -12px; border-radius: 10px; transition: background .15s; }
+.projects a { display: grid; grid-template-columns: 10px 1fr auto; gap: 16px; align-items: baseline; padding: 16px 12px; margin: 0 -12px; border-radius: 10px; position: relative; transition: background .15s, transform .32s cubic-bezier(.3,1.7,.5,1), box-shadow .25s; }
 .projects .dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c); transform: translateY(1px); transition: transform .25s; }
 .p-main { display: flex; flex-direction: column; }
 .p-name { font: 400 22px/1.25 var(--serif); color: var(--fg); transition: color .15s; }
 .p-desc { font-size: 14px; color: var(--muted); }
 .p-url { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .p-url i { font-style: normal; display: inline-block; transition: transform .2s; }
-.projects a:hover { background: var(--soft); }
+.projects a:hover { background: var(--card); transform: translateY(-3px) scale(1.012); box-shadow: 0 1px 0 var(--line), 0 10px 24px -14px rgba(0,0,0,.35); z-index: 1; }
+.projects a:active { transform: translateY(-1px) scale(1.004); transition-duration: .1s; }
 .projects a:hover .p-name { color: var(--c); }
 .projects a:hover .dot { transform: translateY(1px) rotate(45deg); }
 .projects a:hover .p-url i { transform: translate(2px, -2px); }

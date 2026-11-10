@@ -39,7 +39,7 @@ const sfx = (() => {
     // master: bus -> compressor -> volume -> speakers, plus a reverb send
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -20; comp.ratio.value = 4;
-    const master = ctx.createGain(); master.gain.value = 0.8;
+    const master = ctx.createGain(); master.gain.value = 1.35;
     bus = ctx.createGain();
     bus.connect(comp).connect(master).connect(ctx.destination);
 
@@ -112,7 +112,21 @@ const sfx = (() => {
     },
     hover() {
       if (!ready()) return;
-      burst({ freq: 4200, q: 3, dur: 0.012, gain: 0.015 });
+      burst({ freq: 4200, q: 3, dur: 0.012, gain: 0.02 });
+    },
+    // hover over items: a soft rising "bloop" sitting on a muted key thock.
+    // `step` walks up a five-note scale, so moving down a list plays a little tune.
+    bubble(step = 0, soft = false) {
+      if (!ready()) return;
+      const now = performance.now();
+      if (now - (this._lastBubble || 0) < 45) return;   // no machine-gunning
+      this._lastBubble = now;
+      const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5];
+      const f = scale[((step % scale.length) + scale.length) % scale.length];
+      const k = soft ? 0.55 : 1;
+      tone(f * 0.62, { to: f, dur: 0.09, gain: 0.055 * k });          // bloop
+      burst({ freq: 520, q: 1.2, dur: 0.035, gain: 0.07 * k, type: 'lowpass' }); // thock
+      burst({ freq: 2600, q: 3, dur: 0.01, gain: 0.015 * k });        // tiny key click
     },
     chime(up = true) {
       if (!ctx) return;
@@ -285,8 +299,27 @@ const QUESTIONS = [
   });
 })();
 
-document.querySelectorAll('.projects a, .pill').forEach(el =>
-  el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.hover(); }));
+// Bubble-thock when the cursor moves onto an item. Each list plays its own rising scale.
+[['.projects a', 0], ['.pill', 2], ['.books li', 1], ['.nav-links a', 4]].forEach(([sel, base]) =>
+  document.querySelectorAll(sel).forEach((el, i) =>
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.bubble(base + i); })));
+// question chips are created later, so listen on their container
+document.getElementById('questions').addEventListener('pointerover', e => {
+  const q = e.target.closest('.q');
+  if (!q || e.pointerType !== 'mouse' || q.contains(e.relatedTarget)) return;
+  sfx.bubble(3 + [...q.parentNode.children].indexOf(q));
+});
+
+// On phones there's no hover, so rows give a softer bubble as they scroll past the middle of the screen.
+if (matchMedia('(hover: none)').matches && 'IntersectionObserver' in window) {
+  let touched = false;
+  addEventListener('touchstart', () => (touched = true), { passive: true, once: true });
+  const rows = [...document.querySelectorAll('.projects li, .books li')];
+  const mid = new IntersectionObserver(entries => entries.forEach(en => {
+    if (en.isIntersecting && touched) sfx.bubble(rows.indexOf(en.target), true);
+  }), { rootMargin: '-50% 0px -50% 0px' });
+  rows.forEach(r => mid.observe(r));
+}
 
 // Sound toggle (nav icon + footer text)
 const soundText = document.getElementById('soundText');
@@ -355,6 +388,75 @@ heads.forEach(h => {
   h.addEventListener('pointerleave', () => clearTimeout(hoverTimer));
   h.addEventListener('click', () => retype(h, 70));   // taps on phones (scroll-drags don't count)
 });
+
+/* ---------- Eyes follow the cursor ----------
+   Each pupil looks toward the pointer on its own (so they converge a little
+   when it's close), eases there smoothly, looks down when the pointer is below,
+   drifts back to the middle when idle, and blinks now and then. */
+(() => {
+  const face = document.getElementById('face');
+  const eyes = [...face.querySelectorAll('.eye')].map(g => ({
+    cx: +g.dataset.cx, cy: +g.dataset.cy,
+    pupil: g.querySelector('.pupil'), glint: g.querySelector('.glint'),
+    lid: g.querySelector('.lid'), open: g.querySelector('.lid').dataset.open,
+    x: 0, y: 0, tx: 0, ty: 0,
+  }));
+  // how far a pupil may travel (SVG units) inside the almond
+  const RX = 3.6, UP = 1.2, DOWN = 2.3;
+  const touchOnly = matchMedia('(hover: none)').matches;
+  const pointer = { x: 0, y: 0, active: false, last: 0 };
+  let visible = true, running = false;
+
+  function aim(e) { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; pointer.last = performance.now(); kick(); }
+  addEventListener('pointermove', aim, { passive: true });
+  addEventListener('pointerdown', aim, { passive: true });
+  document.addEventListener('pointerleave', () => { pointer.active = false; kick(); });
+  addEventListener('blur', () => { pointer.active = false; kick(); });
+  addEventListener('scroll', kick, { passive: true });   // the face moves under a still cursor
+
+  function targets() {
+    const m = face.getScreenCTM();
+    const idle = performance.now() - pointer.last > (touchOnly ? 2500 : 6000);
+    for (const e of eyes) {
+      if (!m || !pointer.active || idle) { e.tx = 0; e.ty = 0; continue; }
+      const sx = m.a * e.cx + m.c * e.cy + m.e, sy = m.b * e.cx + m.d * e.cy + m.f;
+      const dx = pointer.x - sx, dy = pointer.y - sy, d = Math.hypot(dx, dy) || 1;
+      const reach = Math.min(1, d / 160);                 // close to the face = look nearly straight
+      e.tx = (dx / d) * reach * RX;
+      e.ty = (dy / d) * reach * (dy > 0 ? DOWN : UP);
+    }
+    return idle;
+  }
+  function frame() {
+    const idle = targets();
+    let moving = false;
+    for (const e of eyes) {
+      e.x += (e.tx - e.x) * 0.16; e.y += (e.ty - e.y) * 0.16;
+      if (Math.abs(e.tx - e.x) > 0.01 || Math.abs(e.ty - e.y) > 0.01) moving = true;
+      e.pupil.setAttribute('transform', `translate(${e.x.toFixed(2)} ${e.y.toFixed(2)})`);
+      e.glint.setAttribute('transform', `translate(${(e.x * 0.85).toFixed(2)} ${(e.y * 0.85).toFixed(2)})`);
+    }
+    // keep going while easing, or while a pointer is around (so the idle drift-back can kick in)
+    if (visible && (moving || (pointer.active && !idle))) requestAnimationFrame(frame); else running = false;
+  }
+  function kick() { if (!running && visible && !reduceMotion) { running = true; requestAnimationFrame(frame); } }
+
+  if ('IntersectionObserver' in window)
+    new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(face);
+
+  // blinking: the upper lid sweeps down while the pupil squashes, then back
+  function blink() {
+    const closed = e => e.open.replace(/Q(\d+(?:\.\d+)?) (\d+(?:\.\d+)?)/, (_, x, y) => `Q${x} ${(+y + 9).toFixed(1)}`);
+    eyes.forEach(e => { e.lid.setAttribute('d', closed(e)); e.pupil.style.opacity = e.glint.style.opacity = 0; });
+    setTimeout(() => eyes.forEach(e => { e.lid.setAttribute('d', e.open); e.pupil.style.opacity = e.glint.style.opacity = ''; }), 120);
+  }
+  if (!reduceMotion) (function schedule() {
+    setTimeout(() => {
+      if (visible && !document.hidden) { blink(); if (Math.random() < 0.2) setTimeout(blink, 260); }
+      schedule();
+    }, 2800 + Math.random() * 4200);
+  })();
+})();
 
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');

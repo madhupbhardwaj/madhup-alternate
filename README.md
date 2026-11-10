@@ -23,7 +23,7 @@ Open `index.html` in a browser. That's it.
 Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the link, name and description, and pick a colour (`--c1` … `--c5`).
 
 ## Customise
-- **Avatar:** `avatar.svg` is a hand-drawn line illustration. To use a photo instead, put `me.jpg` in the folder and change the `src` of the image inside `.avatar` in `index.html`.
+- **Avatar:** the line drawing is embedded in `index.html` (inside `.avatar`) so its eyes can follow the cursor and blink; `avatar.svg` is the same drawing as a standalone file. How far the pupils move is set by `RX`, `UP` and `DOWN` in `script.js`.
 - **Sounds:** generated in code with the Web Audio API (no audio files). Visitors can switch them off with the speaker icon or "sound on" in the footer. Browsers only allow sound after the first click/tap/keypress on the page.
 - **Banner:** a harmonograph — a pen tracing two combined waves. Drag left/right to pick a ratio (1:2 octave … 5:6 minor third), or click/tap for the next one. You hear the same two notes the curve is drawn from. The list of ratios is the `ratios` array in `script.js`.
 - **"more about me" questions:** edit the `QUESTIONS` list near the bottom of `script.js`. Each `{ q: '...', a: '...' }` becomes a question button, and the answer is typed out in the speech bubble next to the avatar.

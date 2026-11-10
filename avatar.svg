@@ -62,19 +62,23 @@
   <path fill="#1a1a18" stroke="none" d="M90 119 L100 110 L118 109 L117 115 L101 115 Z"/>
   <path fill="#1a1a18" stroke="none" d="M128 109 L146 110 L156 119 L145 115 L129 115 Z"/>
 
-  <!-- eyes: natural almond shape -->
-  <g>
-    <clipPath id="e105"><path d="M94 127 Q103 119 116 126.5 Q106 133 94 127 Z"/></clipPath>
-    <circle cx="105.5" cy="127" r="5" fill="#1a1a18" stroke="none" clip-path="url(#e105)"/>
-    <circle cx="107.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/>
-    <path d="M94 127 Q103 119 116 126.5" stroke-width="2.1"/>
+  <!-- eyes: pupils move to follow the cursor (see script.js) -->
+  <g class="eye" data-cx="105.5" data-cy="127">
+    <clipPath id="eyeL"><path d="M94 127 Q103 119 116 126.5 Q106 133 94 127 Z"/></clipPath>
+    <g clip-path="url(#eyeL)">
+      <g class="pupil"><circle cx="105.5" cy="127" r="5" fill="#1a1a18" stroke="none"/></g>
+      <g class="glint"><circle cx="107.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/></g>
+    </g>
+    <path class="lid" d="M94 127 Q103 119 116 126.5" data-open="M94 127 Q103 119 116 126.5" stroke-width="2.1"/>
     <path d="M96 128.8 Q106 133.5 115 127.8" stroke-width="1.1" stroke-opacity=".55"/>
   </g>
-  <g>
-    <clipPath id="e141"><path d="M130 127 Q139 119 152 126.5 Q142 133 130 127 Z"/></clipPath>
-    <circle cx="140.5" cy="127" r="5" fill="#1a1a18" stroke="none" clip-path="url(#e141)"/>
-    <circle cx="142.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/>
-    <path d="M130 127 Q139 119 152 126.5" stroke-width="2.1"/>
+  <g class="eye" data-cx="140.5" data-cy="127">
+    <clipPath id="eyeR"><path d="M130 127 Q139 119 152 126.5 Q142 133 130 127 Z"/></clipPath>
+    <g clip-path="url(#eyeR)">
+      <g class="pupil"><circle cx="140.5" cy="127" r="5" fill="#1a1a18" stroke="none"/></g>
+      <g class="glint"><circle cx="142.3" cy="125.2" r="1.3" fill="#fdfdfc" stroke="none"/></g>
+    </g>
+    <path class="lid" d="M130 127 Q139 119 152 126.5" data-open="M130 127 Q139 119 152 126.5" stroke-width="2.1"/>
     <path d="M132 128.8 Q142 133.5 151 127.8" stroke-width="1.1" stroke-opacity=".55"/>
   </g>
 
