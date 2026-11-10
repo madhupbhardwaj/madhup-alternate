@@ -591,6 +591,8 @@ function trackEyes(face) {
   });
   // how far a pupil may travel (SVG units) inside the almond
   const RX = 3.6, UP = 1.2, DOWN = 2.3;
+  // where the eyes rest when nobody's moving (the 404 face looks up to one side, thinking)
+  const [IDLE_X, IDLE_Y] = (face.dataset.idle || '0,0').split(',').map(Number);
   // how far the upper lid comes down for each mood (SVG units)
   const LID = { open: 0, wide: -2.6, sleepy: 5.2, closed: 9.5 };
   const touchOnly = matchMedia('(hover: none)').matches;
@@ -618,7 +620,7 @@ function trackEyes(face) {
     const m = face.getScreenCTM();
     const idle = performance.now() - pointer.last > (touchOnly ? 2500 : 6000);
     for (const e of eyes) {
-      if (!m || !pointer.active || idle || reduceMotion) { e.tx = 0; e.ty = 0; continue; }
+      if (!m || !pointer.active || idle || reduceMotion) { e.tx = IDLE_X; e.ty = IDLE_Y; continue; }
       const sx = m.a * e.cx + m.c * e.cy + m.e, sy = m.b * e.cx + m.d * e.cy + m.f;
       const dx = pointer.x - sx, dy = pointer.y - sy, d = Math.hypot(dx, dy) || 1;
       const reach = Math.min(1, d / 160);                 // close to the face = look nearly straight
