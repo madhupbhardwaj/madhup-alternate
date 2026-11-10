@@ -226,10 +226,16 @@ const avatarTalk = (() => {
       out.data += ch;
       if (ch !== ' ' || i % 2) sfx.thock(ch === ' ');
       if (i < text.length) {
-        const pause = /[.,!?]/.test(ch) ? 180 : 38;   // little breath after punctuation
-        typeTimer = setTimeout(next, pause + Math.random() * 45);
+        const pause = /[.,!?]/.test(ch) ? 140 : 26;   // little breath after punctuation
+        typeTimer = setTimeout(next, pause + Math.random() * 30);
       } else { caret.remove(); done(); }
+      keepVisible();
     })();
+    // if the bubble grows up under the sticky nav, scroll just enough to show it
+    function keepVisible() {
+      const top = bubble.getBoundingClientRect().top, navH = 64;
+      if (top < navH) scrollBy({ top: top - navH - 8, behavior: 'auto' });
+    }
     function done() { hideTimer = setTimeout(hide, Math.max(5000, text.length * 90)); }
   }
   return { answer, hide, isAnswering: () => answering };
@@ -239,12 +245,16 @@ const avatarTalk = (() => {
    Edit this list: each question appears as a button, and its answer is
    typed out in the speech bubble next to the avatar. */
 const QUESTIONS = [
-  { q: 'question one?',   a: 'answer one goes here.' },
-  { q: 'question two?',   a: 'answer two goes here.' },
-  { q: 'question three?', a: 'answer three goes here.' },
-  { q: 'question four?',  a: 'answer four goes here.' },
-  { q: 'question five?',  a: 'answer five goes here.' },
-  { q: 'question six?',   a: 'answer six goes here.' },
+  { q: 'what are you working towards?',
+    a: "jee 2028 is the big one right now. building things is the passion that runs alongside it." },
+  { q: 'why math?',
+    a: "it's the most logical thing there is. everything is rigorous, and if you're brave enough, you can derive it yourself. it doesn't always show up in real life, but i'm here for the love of the game." },
+  { q: 'which project are you proudest of?',
+    a: "problemset.in, no contest." },
+  { q: 'what are you bad at?',
+    a: "art, and i'll own it. drawing is not my strong suit." },
+  { q: 'a book that changed how you think?',
+    a: "the almanack of naval ravikant. one of the most eye-opening books out there, and somehow still overlooked." },
 ];
 (() => {
   const btn = document.getElementById('askBtn');
