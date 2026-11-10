@@ -21,6 +21,9 @@ Open `index.html` in a browser. That's it.
 
 ## Deploy
 
+The site lives at **https://madhupbhardwaj.vercel.app** (main) and **https://madhup.onrender.com** (copy). Both deploy automatically from this repo's `main` branch.
+
+
 **Vercel:** push this folder to a GitHub repo, then in Vercel choose *Add New → Project*, import the repo, and set Framework Preset to **Other**. Leave the build command empty and click **Deploy**.
 
 **Render:** in Render choose *New → Static Site* and connect the repo. Leave the Build Command empty (or use `echo done`), set Publish Directory to `.`, and click **Create Static Site**.
@@ -57,7 +60,7 @@ The speaker icon opens a volume card: ten ink strokes, click or drag to set 0–
 
 ## Little details
 - **Project previews:** `previews/<name>.webp` (720×450) are screenshots of each project. If a project's look changes, replace its file with a new screenshot of the same name.
-- **Share card:** `og.png` (1200×630). The share tags in each page point to `https://madhup.onrender.com/og.png`; if the site moves to a new address, update those tags.
+- **Share card:** `og.png` (1200×630). The share tags in each page point to `https://madhupbhardwaj.vercel.app` (the main address); if that changes, update those tags and the address printed on `og.png`.
 - **Avatar moods:** eyes close while sound is muted, get sleepy from 11pm to 6am India time (with floating z's), and go wide if you click the avatar three times quickly.
 - **Grass through the day:** morning dew (5–8am), plain daylight, sunset glow (5–7:30pm) and fireflies at night, all on India time. To preview one, add `?t=dawn`, `?t=day`, `?t=dusk` or `?t=night` to the address.
 - **404 page:** `404.html`, shown for any address that doesn't exist.

@@ -1,17 +1,18 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/about",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/projects",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/reading",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ]
 }
