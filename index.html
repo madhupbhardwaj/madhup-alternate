@@ -17,10 +17,20 @@
   try {
     var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t;
     if (localStorage.getItem('sound') === 'off') document.documentElement.dataset.sound = 'off';
+    if (localStorage.getItem('welcomed')) document.documentElement.dataset.welcomed = '';
   } catch (e) {}
 </script>
 </head>
 <body>
+
+<!-- first visit only: one tap here is what lets the browser play the site's sounds -->
+<div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-label="Welcome. Click, tap or press any key to enter." tabindex="0">
+  <div class="w-stage">
+    <div class="w-avatar" id="wAvatar"></div>
+    <div class="w-bubble" aria-hidden="true"><span id="wText"></span><span class="tcaret"></span></div>
+  </div>
+  <p class="w-hint mono"><span class="w-mouse">click anywhere to come in</span><span class="w-touch">tap anywhere to come in</span></p>
+</div>
 
 <nav class="nav band">
   <div class="col nav-inner">

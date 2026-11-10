@@ -351,9 +351,46 @@ function retype(el, speed) {
   typeInto(el, el.dataset.text, { speed });
 }
 
+/* ---------- Welcome screen ----------
+   First visit only. Browsers won't play any sound until the visitor clicks,
+   taps or presses a key, so this screen asks for exactly that, then lets the
+   page start typing with sound. Returning visitors never see it. */
+const entered = new Promise(resolve => {
+  if ('welcomed' in root.dataset) { document.getElementById('welcome').remove(); return resolve(); }
+  const screen = document.getElementById('welcome');
+  // a second copy of the face, with its own clip-path ids, so its eyes can move too
+  const face = document.getElementById('face').cloneNode(true);
+  face.id = 'faceWelcome';
+  face.setAttribute('aria-hidden', 'true');
+  face.querySelectorAll('clipPath').forEach(cp => {
+    const old = cp.id; cp.id = 'w' + old;
+    face.querySelectorAll(`[clip-path="url(#${old})"]`).forEach(el => el.setAttribute('clip-path', `url(#w${old})`));
+  });
+  document.getElementById('wAvatar').appendChild(face);
+  trackEyes(face);
+  // the greeting types itself out (silently: sound isn't allowed yet)
+  const wText = document.getElementById('wText');
+  setTimeout(() => typeInto(wText, 'hi! welcome to my portfolio', { speed: 45 }), 700);
+  screen.focus({ preventScroll: true });
+
+  let done = false;
+  function enter(e) {
+    if (done) return;
+    if (e.type === 'keydown' && ['Tab', 'Shift', 'Alt', 'Control', 'Meta'].includes(e.key)) return;
+    done = true;
+    sfx.unlock();
+    store.set('welcomed', '1');
+    setTimeout(() => sfx.hi(), 150);   // give the audio engine a moment to wake up
+    screen.classList.add('leaving');
+    setTimeout(() => { root.dataset.welcomed = ''; screen.remove(); resolve(); }, reduceMotion ? 0 : 480);
+  }
+  screen.addEventListener('click', enter);
+  screen.addEventListener('keydown', enter);
+});
+
 // Hero subtitle
 const typed = document.getElementById('typed');
-setTimeout(() => typeInto(typed, typed.dataset.text, { speed: 60 }), 500);
+entered.then(() => setTimeout(() => typeInto(typed, typed.dataset.text, { speed: 60 }), 350));
 
 // Click (or tap) the name to retype the subtitle
 document.getElementById('nameBtn').addEventListener('click', () => retype(typed, 60));
@@ -367,7 +404,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
     io.unobserve(en.target);
     typeInto(en.target, en.target.dataset.text, { speed: 70 });
   }), { rootMargin: '0px 0px -15% 0px' });
-  heads.forEach(h => io.observe(h));
+  entered.then(() => heads.forEach(h => io.observe(h)));   // start after the welcome screen
 } else {
   heads.forEach(h => (h.textContent = h.dataset.text));
 }
@@ -388,8 +425,7 @@ heads.forEach(h => {
    Each pupil looks toward the pointer on its own (so they converge a little
    when it's close), eases there smoothly, looks down when the pointer is below,
    drifts back to the middle when idle, and blinks now and then. */
-(() => {
-  const face = document.getElementById('face');
+function trackEyes(face) {
   const eyes = [...face.querySelectorAll('.eye')].map(g => ({
     cx: +g.dataset.cx, cy: +g.dataset.cy,
     pupil: g.querySelector('.pupil'), glint: g.querySelector('.glint'),
@@ -451,7 +487,8 @@ heads.forEach(h => {
       schedule();
     }, 2800 + Math.random() * 4200);
   })();
-})();
+}
+trackEyes(document.getElementById('face'));
 
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');

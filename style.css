@@ -103,7 +103,7 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
   font-size: 16px; line-height: 1.35; padding: 9px 15px 8px; border-radius: 14px; min-height: 1.35em;
 }
 .avatar-wrap.say .bubble.long { transform: rotate(-1.5deg); }
-.bubble .tcaret { display: inline-block; width: 1.5px; height: 1em; background: var(--fg); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+.bubble .tcaret, .w-bubble .tcaret { display: inline-block; width: 1.5px; height: 1em; background: var(--fg); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
 .avatar img, .avatar svg { display: block; width: 100%; height: 100%; }
 /* the drawing keeps its own ink, whatever the theme (overrides the icon defaults above) */
 #face { fill: none; stroke: #1a1a18; stroke-width: 2; color: #1a1a18; }
@@ -206,4 +206,45 @@ h2[data-type] { cursor: default; -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
+}
+
+/* ---------- Welcome screen (first visit only) ---------- */
+.welcome {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 36px;
+  background-color: var(--bg); background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 16px 16px;
+  cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent;
+  transition: opacity .5s ease, transform .5s ease;
+}
+:root[data-welcomed] .welcome { display: none; }
+:root:not([data-welcomed]) body { overflow: hidden; }
+.welcome.leaving { opacity: 0; transform: scale(1.03); pointer-events: none; }
+.w-stage { position: relative; padding: 70px 0 0; }
+.w-avatar {
+  width: 168px; height: 168px; border-radius: 32px; overflow: hidden; background: #fff;
+  border: 1px solid var(--line); box-shadow: 0 0 0 6px var(--bg), 0 18px 40px -24px rgba(0,0,0,.35);
+  animation: wPop .6s cubic-bezier(.3,1.5,.5,1) both;
+}
+.w-avatar svg { display: block; width: 100%; height: 100%; fill: none; stroke: #1a1a18; stroke-width: 2; }
+.w-bubble {
+  position: absolute; left: calc(100% - 34px); bottom: calc(100% - 92px); z-index: 1;
+  font: 22px/1.25 var(--hand); color: var(--fg); white-space: nowrap;
+  background: var(--card); border: 1.5px solid var(--fg); border-radius: 16px; padding: 10px 16px 8px;
+  transform-origin: 0% 100%; animation: wBubble .45s .45s cubic-bezier(.3,1.6,.5,1) both;
+}
+.w-bubble::after {
+  content: ""; position: absolute; left: 12px; bottom: -8px; width: 12px; height: 12px;
+  background: var(--card); border-right: 1.5px solid var(--fg); border-bottom: 1.5px solid var(--fg);
+  transform: rotate(45deg) skew(10deg, 10deg);
+}
+.w-hint { font-size: 12px; color: var(--muted); letter-spacing: .04em; animation: wHint 2.4s 1.6s ease-in-out infinite both; }
+.w-touch { display: none; }
+@media (hover: none) { .w-mouse { display: none; } .w-touch { display: inline; } }
+@keyframes wPop { from { opacity: 0; transform: scale(.85) translateY(10px); } }
+@keyframes wBubble { from { opacity: 0; transform: scale(.4) translate(-10px, 14px) rotate(-6deg); } to { transform: rotate(-2deg); } }
+@keyframes wHint { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@media (max-width: 640px) {
+  .w-avatar { width: 128px; height: 128px; border-radius: 26px; }
+  .w-bubble { font-size: 17px; left: -58px; bottom: calc(100% - 66px); white-space: nowrap; padding: 9px 14px 7px; }
+  .w-bubble::after { left: auto; right: 34%; }
+  .welcome { padding: 0 16px; }
 }
