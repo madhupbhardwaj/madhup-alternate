@@ -376,8 +376,8 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 } else {
   heads.forEach(h => (h.textContent = h.dataset.text));
 }
-// Rest the cursor on a heading for 2 seconds (or tap it on a phone) to watch it type again
-const HOVER_DELAY = 2000;
+// Rest the cursor on a heading for 0.75 seconds (or tap it on a phone) to watch it type again
+const HOVER_DELAY = 750;
 heads.forEach(h => {
   let hoverTimer;
   h.addEventListener('pointerenter', e => {
@@ -410,7 +410,7 @@ heads.forEach(h => {
   function aim(e) { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; pointer.last = performance.now(); kick(); }
   addEventListener('pointermove', aim, { passive: true });
   addEventListener('pointerdown', aim, { passive: true });
-  document.addEventListener('pointerleave', () => { pointer.active = false; kick(); });
+  document.addEventListener('mouseout', e => { if (!e.relatedTarget) { pointer.active = false; kick(); } });
   addEventListener('blur', () => { pointer.active = false; kick(); });
   addEventListener('scroll', kick, { passive: true });   // the face moves under a still cursor
 
