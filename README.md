@@ -32,8 +32,12 @@ Copy one `<li>` block inside `<ul class="projects">` in `index.html`, change the
 - **Welcome screen:** first-time visitors see a short "hi! welcome to my portfolio" screen. Browsers block all sound until the visitor clicks, taps or presses a key, so this one tap is what lets the typing and other sounds play from the very first scroll. It's remembered in the browser, so returning visitors skip it. To show it again while testing, run `localStorage.removeItem('welcomed')` in the browser console and reload.
 - **"me" page:** `me.html` is one plain piece of writing. Add a paragraph with `<p>…</p>`, or a line that fills in word by word as you scroll with `<blockquote class="fill">…</blockquote>`. Links in the text use `class="dot"`.
 
-## Clean URLs (/me instead of /me.html)
-The nav links to `/me`. The host has to map that to `me.html`:
-- **Render:** Dashboard → your static site → **Redirects/Rewrites** → add Source `/me`, Destination `/me.html`, Action **Rewrite**.
-- **Vercel:** already handled by `vercel.json` (`cleanUrls`).
-Note: when you open the files straight from your computer (not through a host), the `/me` and `/` links won't work, because they point at the root of a website.
+## Clean URLs (/me, /about, /projects, /reading)
+The site links to `/me`, `/about`, `/projects` and `/reading` (no `.html`, no `#`). The host has to map those paths:
+- **Render:** Dashboard → your static site → **Redirects/Rewrites** → add four rules, each with Action **Rewrite**:
+  - `/me` → `/me.html`
+  - `/about` → `/index.html`
+  - `/projects` → `/index.html`
+  - `/reading` → `/index.html`
+- **Vercel:** already handled by `vercel.json`.
+Note: when you open the files straight from your computer (not through a host), these links won't work, because they point at the root of a website.

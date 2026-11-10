@@ -354,6 +354,41 @@ function retype(el, speed) {
   typeInto(el, el.dataset.text, { speed });
 }
 
+/* ---------- Clean section addresses: /about, /projects, /reading ----------
+   On the main page these scroll to the section and change the address bar
+   without reloading. Opening one directly (or from the "me" page) loads the
+   main page already scrolled there. The host rewrites these paths to index.html. */
+(() => {
+  const SECTIONS = ['about', 'projects', 'reading'];
+  const onHome = SECTIONS.every(id => $(id));
+  if (!onHome) return;
+  const nameOf = path => path.replace(/^\/+|\/+$/g, '');
+  function goTo(name, smooth) {
+    const behavior = smooth && !reduceMotion ? 'smooth' : 'auto';
+    if (SECTIONS.includes(name)) $(name).scrollIntoView({ behavior });
+    else scrollTo({ top: 0, behavior });
+  }
+  // arrived at /projects etc. (or an old /#projects link): jump there once laid out
+  const start = nameOf(location.pathname) || location.hash.slice(1);
+  if (SECTIONS.includes(start)) {
+    history.replaceState(null, '', '/' + start);
+    requestAnimationFrame(() => goTo(start, false));
+    addEventListener('load', () => goTo(start, false), { once: true });   // again after fonts settle
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    const href = a.getAttribute('href');
+    if (!href.startsWith('/') || href.startsWith('//')) return;
+    const name = nameOf(href);
+    if (name !== '' && !SECTIONS.includes(name)) return;     // e.g. /me: a real page, let it load
+    e.preventDefault();
+    if (location.pathname !== href) history.pushState(null, '', href);
+    goTo(name, true);
+  });
+  addEventListener('popstate', () => goTo(nameOf(location.pathname), true));
+})();
+
 /* ---------- Welcome screen ----------
    First visit only. Browsers won't play any sound until the visitor clicks,
    taps or presses a key, so this screen asks for exactly that, then lets the
