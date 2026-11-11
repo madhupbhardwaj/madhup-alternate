@@ -15,7 +15,7 @@
   // ---------- messages ----------
   // Paste your Web3Forms access key here (free: web3forms.com → enter your email → the key arrives by email).
   // It's safe to be public: it can only send messages to your inbox.
-  const WEB3FORMS_KEY = 'YOUR-WEB3FORMS-ACCESS-KEY';
+  const WEB3FORMS_KEY = '3ca3873a-9eb3-4e60-8c3a-58e2b397d6ca';
 
   // ---------- content (only things Madhup has said about himself) ----------
   const PROJECTS = [
