@@ -70,3 +70,7 @@ The speaker icon opens a volume card: ten ink strokes, click or drag to set 0–
 
 ## Visitor stats
 Vercel Web Analytics (page views, countries, devices, referrers; no cookies). It loads only on `*.vercel.app`. To turn it on: Vercel dashboard → your project → **Analytics** → **Enable**. Stats appear in that same Analytics tab.
+
+## Messages (terminal `message` command)
+Visitors type `message` in the terminal (or on the 404 page), answer name / email (optional) / message, confirm, and it's emailed to you via Web3Forms.
+To switch it on: go to web3forms.com, enter your email, copy the access key they email you, and paste it into `WEB3FORMS_KEY` near the top of `terminal.js`. The key is meant to be public; it can only send to your inbox.

@@ -12,6 +12,11 @@
   const LOST = term?.dataset.intro === '404';   // the 404 page's terminal opens differently
   if (!out || !input) return;
 
+  // ---------- messages ----------
+  // Paste your Web3Forms access key here (free: web3forms.com → enter your email → the key arrives by email).
+  // It's safe to be public: it can only send messages to your inbox.
+  const WEB3FORMS_KEY = 'YOUR-WEB3FORMS-ACCESS-KEY';
+
   // ---------- content (only things Madhup has said about himself) ----------
   const PROJECTS = [
     { name: 'problemset',   url: 'https://problemset.in',                desc: 'practice problems, sorted by topic: number theory to calculus.' },
@@ -105,6 +110,7 @@
       if (n > 0) sfx.bubble(n - 1);
       return `volume: ${n}/10`;
     } },
+    message:  { help: 'send me a message',          run: () => { startMessage(); return null; } },
     clear:    { help: 'clear the screen',             run: () => { out.innerHTML = ''; return null; } },
     me:       { help: 'go to the "me" page',          run: () => { go('/me'); return 'going to /me…'; } },
     home:     { help: 'back to the main page',        run: () => { go('/'); return 'going home…'; } },
@@ -146,6 +152,7 @@
   const past = [];
   let cursor = 0;
   function run(raw) {
+    if (flow) return flowInput(raw);
     const line = raw.trim();
     print(html(promptHTML + esc(raw)));
     if (line) { past.push(line); }
@@ -160,6 +167,84 @@
     }
     print(' ');
     scrollDown();
+  }
+
+  // ---------- "message": asks for name, email and message, then emails it to Madhup ----------
+  let flow = null;
+  const promptEl = document.querySelector('.term-input-line .prompt');
+  const homePrompt = promptEl ? promptEl.innerHTML : '';
+  const STEPS = [
+    { key: 'name',    ask: 'your name',                       max: 80 },
+    { key: 'email',   ask: 'your email (optional, so i can reply)', max: 120, optional: true },
+    { key: 'message', ask: 'your message',                    max: 2000 },
+    { key: 'confirm', ask: 'send it? (y/n)',                  max: 3 },
+  ];
+  const currentPrompt = () => flow ? `<span class="prompt"><span class="y">${esc(STEPS[flow.step].key)}</span> <span class="dim">›</span></span> ` : promptHTML;
+  function setPrompt() { if (promptEl) promptEl.innerHTML = flow ? currentPrompt().replace(/^<span class="prompt">|<\/span> $/g, '') : homePrompt; }
+  function ask() { print(html(`<span class="dim">${esc(STEPS[flow.step].ask)}:</span>`)); setPrompt(); scrollDown(); }
+  function endFlow() { flow = null; setPrompt(); }
+  function startMessage() {
+    const last = +store.get('lastMessageAt') || 0;
+    if (Date.now() - last < 60000) { print(html('<span class="dim">you just sent one. give it a minute and try again.</span>')); return; }
+    flow = { step: 0, data: {} };
+    print(html('<span class="hl">send me a message.</span> <span class="dim">it goes straight to my inbox. press ctrl+c to cancel.</span>'));
+    print(' ');
+    ask();
+  }
+  function flowInput(raw) {
+    const s = STEPS[flow.step], v = raw.trim();
+    print(html(currentPrompt() + esc(raw)));
+    if (s.key === 'confirm') {
+      if (/^y(es)?$/i.test(v)) { send(flow.data); endFlow(); return; }
+      if (/^n(o)?$/i.test(v)) { endFlow(); print(html('<span class="dim">okay, not sent.</span>')); print(' '); return scrollDown(); }
+      print(html('<span class="dim">type y or n.</span>')); return scrollDown();
+    }
+    if (!v && !s.optional) { print(html(`<span class="err">${esc(s.key)} can't be empty.</span>`)); return ask(); }
+    if (v.length > s.max) { print(html(`<span class="err">that's a bit long (max ${s.max} characters).</span>`)); return ask(); }
+    if (s.key === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { print(html('<span class="err">that doesn\'t look like an email. leave it empty to skip.</span>')); return ask(); }
+    flow.data[s.key] = v;
+    flow.step++;
+    if (STEPS[flow.step].key === 'confirm') {
+      const d = flow.data;
+      print(' ');
+      print(html(`<span class="dim">from:</span>    ${esc(d.name)}${d.email ? ' <span class="dim">&lt;' + esc(d.email) + '&gt;</span>' : ''}\n<span class="dim">message:</span> ${esc(d.message)}`));
+      print(' ');
+    }
+    ask();
+  }
+  async function send(d) {
+    if (!WEB3FORMS_KEY || WEB3FORMS_KEY.startsWith('YOUR-')) {
+      print(html('<span class="err">messages aren\'t switched on yet.</span> <span class="dim">for now, reach me on</span> ' + link('linkedin', LINKS.linkedin) + '<span class="dim">.</span>'));
+      print(' '); return scrollDown();
+    }
+    const line = document.createElement('div'); line.className = 'term-line dim'; line.textContent = 'sending'; out.appendChild(line); scrollDown();
+    const dots = setInterval(() => { line.textContent = line.textContent.length > 10 ? 'sending' : line.textContent + '.'; }, 300);
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: `new message from ${d.name} (portfolio terminal)`,
+          from_name: 'madhup. terminal',
+          name: d.name, email: d.email || 'not given', message: d.message,
+          page: location.href, botcheck: false,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      clearInterval(dots);
+      if (res.ok && json.success !== false) {
+        store.set('lastMessageAt', String(Date.now()));
+        line.className = 'term-line'; line.innerHTML = '<span class="g">✓ sent.</span> thanks for writing, i\'ll read it soon.';
+        sfx.chime(true);
+      } else {
+        line.className = 'term-line'; line.innerHTML = '<span class="err">couldn\'t send that right now.</span> <span class="dim">try again later, or reach me on</span> ' + link('linkedin', LINKS.linkedin) + '<span class="dim">.</span>';
+      }
+    } catch (e) {
+      clearInterval(dots);
+      line.className = 'term-line'; line.innerHTML = '<span class="err">no connection, so it didn\'t send.</span> <span class="dim">try again in a bit.</span>';
+    }
+    print(' '); scrollDown();
   }
 
   // ---------- tab completion ----------
@@ -184,11 +269,15 @@
       run(input.value); input.value = '';
       return;
     }
-    if (e.key === 'Tab') { e.preventDefault(); complete(); sfx.thock(); return; }
-    if (e.key === 'ArrowUp') { e.preventDefault(); if (cursor > 0) input.value = past[--cursor]; return; }
+    if (e.key === 'Tab') { e.preventDefault(); if (!flow) complete(); sfx.thock(); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); if (!flow && cursor > 0) input.value = past[--cursor]; return; }
     if (e.key === 'ArrowDown') { e.preventDefault(); cursor = Math.min(past.length, cursor + 1); input.value = past[cursor] || ''; return; }
     if (e.ctrlKey && e.key.toLowerCase() === 'l') { e.preventDefault(); out.innerHTML = ''; return; }
-    if (e.ctrlKey && e.key.toLowerCase() === 'c') { e.preventDefault(); print(html(promptHTML + esc(input.value) + '^C')); input.value = ''; scrollDown(); return; }
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault(); print(html(currentPrompt() + esc(input.value) + '^C')); input.value = '';
+      if (flow) { endFlow(); print(html('<span class="dim">message cancelled.</span>')); print(' '); }
+      scrollDown(); return;
+    }
   });
   // thocky key sound whenever the text changes: works for laptop keyboards and phone keyboards alike
   input.addEventListener('input', e => {
