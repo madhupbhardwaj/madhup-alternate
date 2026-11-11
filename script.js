@@ -247,6 +247,57 @@ const avatarTalk = (() => {
     }
   });
   av.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !answering) hide(); });
+
+  // ---- pick the avatar up and throw it; it springs back home ----
+  let drag = null, spring = null;
+  const place = (x, y, r) => { av.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${r.toFixed(2)}deg)`; };
+  av.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    cancelAnimationFrame(spring);
+    const cur = av._pos || { x: 0, y: 0, r: 0 };
+    drag = { sx: e.clientX - cur.x, sy: e.clientY - cur.y, x: cur.x, y: cur.y, r: cur.r, vx: 0, vy: 0, t: performance.now(), moved: false, id: e.pointerId };
+  });
+  av.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const nx = e.clientX - drag.sx, ny = e.clientY - drag.sy;
+    if (!drag.moved) {
+      if (Math.hypot(nx - drag.x, ny - drag.y) < 6) return;     // still just a tap
+      drag.moved = true;
+      av.setPointerCapture(e.pointerId);
+      av.classList.add('dragging'); hide();
+      $('face')?.surprise?.(); sfx.pop();
+    }
+    const now = performance.now(), dt = Math.max(8, now - drag.t);
+    drag.vx = (nx - drag.x) / dt * 16; drag.vy = (ny - drag.y) / dt * 16; drag.t = now;
+    drag.x = nx; drag.y = ny;
+    drag.r += (Math.max(-25, Math.min(25, drag.vx * 1.6)) - drag.r) * 0.3;   // swings with the movement
+    av._pos = { x: drag.x, y: drag.y, r: drag.r };
+    place(drag.x, drag.y, drag.r);
+  });
+  function letGo(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    const d = drag; drag = null;
+    if (!d.moved) return;
+    av.classList.remove('dragging');
+    sfx.bubble(4);
+    if (reduceMotion) { av._pos = null; av.style.transform = ''; return; }
+    // springy return home, keeping some of the throw
+    let { x, y, r, vx, vy } = d, vr = 0;
+    (function step() {
+      vx = (vx - x * 0.09) * 0.8; vy = (vy - y * 0.09) * 0.8; vr = (vr - r * 0.12) * 0.75;
+      x += vx; y += vy; r += vr;
+      av._pos = { x, y, r };
+      if (Math.abs(x) + Math.abs(y) + Math.abs(vx) + Math.abs(vy) + Math.abs(r) < 0.4) {
+        av._pos = null; av.style.transform = '';
+        answer(['hey! put me down!', 'whoa, where are we going?', 'okay… back home.', "that was fun. again?"][Math.floor(Math.random() * 4)]);
+        return;
+      }
+      place(x, y, r);
+      spring = requestAnimationFrame(step);
+    })();
+  }
+  av.addEventListener('pointerup', letGo);
+  av.addEventListener('pointercancel', letGo);
   av.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse') return;
     sfx.unlock(); hi();
@@ -338,6 +389,18 @@ const QUESTIONS = [
 [['.projects a', 0], ['.pill', 2], ['.nav-links a', 4]].forEach(([sel, base]) =>
   document.querySelectorAll(sel).forEach((el, i) =>
     el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') sfx.bubble(base + i); })));
+// softer bubbles for the smaller things: icons, the logo, links in text and the terminal
+const SOFT_HOVER = [['.icon-btn', 6], ['.logo', 3], ['.back, .prose a.dot, .ul, .term a, .linkish, .vol-mute', 1]];
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  for (const [sel, base] of SOFT_HOVER) {
+    const el = e.target.closest(sel);
+    if (el && !el.contains(e.relatedTarget)) {
+      const sibs = el.parentNode ? [...el.parentNode.children] : [];
+      return sfx.bubble(base + Math.max(0, sibs.indexOf(el)), true);
+    }
+  }
+});
 // question chips are created later, so listen on their container
 $('questions')?.addEventListener('pointerover', e => {
   const q = e.target.closest('.q');
@@ -949,3 +1012,34 @@ if ($('year')) $('year').textContent = new Date().getFullYear();
   if (reduceMotion) { draw(); return; }        // still grass, no animation
   requestAnimationFrame(frame);
 })();
+
+/* ---------- Smooth page transitions ----------
+   Browsers that support cross-page view transitions (Chrome, Edge, Safari)
+   cross-fade via CSS (@view-transition in style.css). Others get a quick
+   fade out before leaving and a fade in on arrival. */
+(() => {
+  if ('CSSViewTransitionRule' in window || reduceMotion) return;
+  root.classList.add('fade-in');
+  addEventListener('pageshow', () => root.classList.remove('leaving'));    // back/forward cache
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (a.target === '_blank' || a.hasAttribute('download')) return;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+    e.preventDefault();
+    root.classList.add('leaving');
+    setTimeout(() => { location.href = url.href; }, 170);
+  });
+})();
+
+/* ---------- Visitor stats ----------
+   Vercel Web Analytics: page views, countries, devices and where visitors came
+   from, with no cookies. Only loaded on the Vercel site; turn it on in the
+   Vercel dashboard (project → Analytics → Enable). */
+if (location.hostname.endsWith('.vercel.app')) {
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  const s = document.createElement('script');
+  s.defer = true; s.src = '/_vercel/insights/script.js';
+  document.head.appendChild(s);
+}

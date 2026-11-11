@@ -64,3 +64,9 @@ The speaker icon opens a volume card: ten ink strokes, click or drag to set 0–
 - **Avatar moods:** eyes close while sound is muted, get sleepy from 11pm to 6am India time (with floating z's), and go wide if you click the avatar three times quickly.
 - **Grass through the day:** morning dew (5–8am), plain daylight, sunset glow (5–7:30pm) and fireflies at night, all on India time. To preview one, add `?t=dawn`, `?t=day`, `?t=dusk` or `?t=night` to the address.
 - **404 page:** `404.html`, shown for any address that doesn't exist.
+- **Drag the avatar:** pick it up and throw it; it springs back home and says something.
+- **Page transitions:** pages cross-fade (`@view-transition` in `style.css`); browsers without support get a quick fade from `script.js`.
+- **Favicon:** `favicon.svg` switches to a light version when the browser is in dark mode.
+
+## Visitor stats
+Vercel Web Analytics (page views, countries, devices, referrers; no cookies). It loads only on `*.vercel.app`. To turn it on: Vercel dashboard → your project → **Analytics** → **Enable**. Stats appear in that same Analytics tab.
