@@ -238,7 +238,8 @@
         line.className = 'term-line'; line.innerHTML = '<span class="g">✓ sent.</span> thanks for writing, i\'ll read it soon.';
         sfx.chime(true);
       } else {
-        line.className = 'term-line'; line.innerHTML = '<span class="err">couldn\'t send that right now.</span> <span class="dim">try again later, or reach me on</span> ' + link('linkedin', LINKS.linkedin) + '<span class="dim">.</span>';
+        line.className = 'term-line'; line.innerHTML = '<span class="err">couldn\'t send that right now.</span> <span class="dim">try again later, or reach me on</span> ' + link('linkedin', LINKS.linkedin) + '<span class="dim">.</span>'
+          + (json.message ? `\n<span class="dim">(${esc(String(json.message).slice(0, 160))})</span>` : `\n<span class="dim">(error ${res.status})</span>`);
       }
     } catch (e) {
       clearInterval(dots);
