@@ -827,6 +827,79 @@ if ($('face')) trackEyes($('face'));
   addEventListener('scroll', () => { if (shown) { shown = false; peek.classList.remove('on'); } }, { passive: true });
 })();
 
+/* ---------- GitHub activity: a year of contributions as ink dots ----------
+   Data comes from a free public service that reads the GitHub profile
+   (github-contributions-api.jogruber.de). If it's unavailable, the section hides. */
+(() => {
+  const svg = $('ghGrid');
+  if (!svg) return;
+  const USER = 'madhupbhardwaj';
+  const hideAll = () => document.querySelectorAll('.gh-only').forEach(el => (el.hidden = true));
+  const tip = $('ghTip'), total = $('ghTotal');
+  const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toLowerCase();
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function draw(data) {
+    const days = data.contributions;
+    if (!Array.isArray(days) || !days.length) return hideAll();
+    const n = data.total?.lastYear ?? days.reduce((s, d) => s + d.count, 0);
+    total.innerHTML = `<b>${n.toLocaleString()}</b> contributions in the last year`;
+    // weeks run sunday→saturday, oldest on the left
+    const first = new Date(days[0].date + 'T00:00:00').getDay();
+    const S = 12, R = 4, TOP = 14;
+    const weeks = Math.ceil((days.length + first) / 7);
+    svg.setAttribute('viewBox', `0 0 ${weeks * S} ${TOP + 7 * S}`);
+    const frag = document.createDocumentFragment();
+    let lastMonth = -1;
+    days.forEach((d, i) => {
+      const k = i + first, col = Math.floor(k / 7), row = k % 7;
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', col * S + S / 2); c.setAttribute('cy', TOP + row * S + S / 2); c.setAttribute('r', R);
+      c.setAttribute('class', 'l' + Math.min(4, d.level));
+      c.dataset.i = i;
+      frag.appendChild(c);
+      const m = new Date(d.date + 'T00:00:00').getMonth();
+      if (row === 0 && m !== lastMonth && col < weeks - 1) {
+        lastMonth = m;
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', col * S + 1); t.setAttribute('y', 9); t.setAttribute('class', 'm');
+        t.textContent = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' }).toLowerCase();
+        frag.appendChild(t);
+      }
+    });
+    svg.replaceChildren(frag);
+    svg.setAttribute('aria-label', `${n} GitHub contributions in the last year`);
+
+    // hover (or tap): a tooltip and a soft tick
+    let on = null, lastTick = 0;
+    function show(c) {
+      if (on === c) return;
+      on?.classList.remove('on'); on = c;
+      if (!c) { tip.hidden = true; return; }
+      c.classList.add('on');
+      const d = days[c.dataset.i];
+      tip.textContent = `${d.count || 'no'} contribution${d.count === 1 ? '' : 's'} · ${fmt(d.date)}`;
+      const wrap = svg.getBoundingClientRect(), r = c.getBoundingClientRect();
+      tip.style.left = Math.min(wrap.width - 70, Math.max(70, r.left - wrap.left + r.width / 2)) + 'px';
+      tip.style.top = (r.top - wrap.top) + 'px';
+      tip.hidden = false;
+      const now = performance.now();
+      if (now - lastTick > 40) { lastTick = now; sfx.hover(); }
+    }
+    svg.addEventListener('pointermove', e => show(e.target.closest('circle')));
+    svg.addEventListener('pointerdown', e => show(e.target.closest('circle')));
+    svg.addEventListener('pointerleave', () => show(null));
+  }
+
+  // cache for an hour so reloads don't refetch
+  const KEY = 'gh-contrib', cached = (() => { try { return JSON.parse(sessionStorage.getItem(KEY)); } catch (e) { return null; } })();
+  if (cached && Date.now() - cached.t < 3600e3) return draw(cached.d);
+  fetch(`https://github-contributions-api.jogruber.de/v4/${USER}?y=last`)
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => { try { sessionStorage.setItem(KEY, JSON.stringify({ t: Date.now(), d })); } catch (e) {} draw(d); })
+    .catch(hideAll);
+})();
+
 /* ---------- Local time in India ---------- */
 const clock = document.getElementById('clock');
 const offsetEl = document.getElementById('offset');

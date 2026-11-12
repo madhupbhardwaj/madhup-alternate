@@ -110,6 +110,10 @@
       if (n > 0) sfx.bubble(n - 1);
       return `volume: ${n}/10`;
     } },
+    git:      { help: 'my latest commits', args: 'log', run: ([sub]) => {
+      if (sub !== 'log') return html('usage: <span class="g">git log</span> <span class="dim">(shows what i pushed to github lately)</span>');
+      gitLog(); return null;
+    } },
     message:  { help: 'send me a message',          run: () => { startMessage(); return null; } },
     clear:    { help: 'clear the screen',             run: () => { out.innerHTML = ''; return null; } },
     me:       { help: 'go to the "me" page',          run: () => { go('/me'); return 'going to /me…'; } },
@@ -248,12 +252,60 @@
     print(' '); scrollDown();
   }
 
+  // ---------- git log: latest public pushes, straight from GitHub ----------
+  const ago = iso => {
+    const s = (Date.now() - new Date(iso)) / 1000;
+    for (const [u, n] of [['year', 31536000], ['month', 2592000], ['day', 86400], ['hour', 3600], ['minute', 60]])
+      if (s >= n) { const v = Math.floor(s / n); return `${v} ${u}${v > 1 ? 's' : ''} ago`; }
+    return 'just now';
+  };
+  async function gitLog() {
+    const line = document.createElement('div'); line.className = 'term-line dim'; line.textContent = 'fetching from github…';
+    out.appendChild(line); scrollDown();
+    const GH = 'https://api.github.com', USER = 'madhupbhardwaj', CK = 'gh-log';
+    try {
+      let rows;
+      const cached = JSON.parse(sessionStorage.getItem(CK) || 'null');
+      if (cached && Date.now() - cached.t < 600e3) rows = cached.rows;
+      else {
+        const res = await fetch(`${GH}/users/${USER}/events/public?per_page=40`);
+        if (!res.ok) throw new Error(res.status === 403 ? 'github says: too many requests for now' : 'github error ' + res.status);
+        const events = await res.json();
+        const pushes = events.filter(e => e.type === 'PushEvent').slice(0, 8);
+        rows = await Promise.all(pushes.map(async e => {
+          const repo = e.repo.name.split('/')[1], branch = (e.payload.ref || '').replace('refs/heads/', '');
+          let sha = e.payload.head || '', msg = '';
+          const commits = e.payload.commits;
+          if (commits && commits.length) { const c = commits[commits.length - 1]; sha = c.sha; msg = c.message; }
+          else if (sha) {   // newer API payloads leave commit messages out, so ask for this one
+            try { const r = await fetch(`${GH}/repos/${e.repo.name}/commits/${sha}`); if (r.ok) msg = (await r.json()).commit.message; } catch (err) {}
+          }
+          return { sha: sha.slice(0, 7), repo, branch, msg: (msg || '(pushed)').split('\n')[0], when: e.created_at };
+        }));
+        try { sessionStorage.setItem(CK, JSON.stringify({ t: Date.now(), rows })); } catch (err) {}
+      }
+      if (!rows.length) { line.textContent = 'no public pushes lately.'; }
+      else {
+        line.className = 'term-line';
+        line.innerHTML = rows.map(r =>
+          `<span class="y">${esc(r.sha)}</span> <span class="b">(${esc(r.repo)}${r.branch && r.branch !== 'main' ? ':' + esc(r.branch) : ''})</span> ${esc(r.msg.slice(0, 72))} <span class="dim">· ${esc(ago(r.when))}</span>`
+        ).join('\n') + `\n\n<span class="dim">more on</span> ${link('github.com/' + USER, 'https://github.com/' + USER)}`;
+      }
+    } catch (err) {
+      line.className = 'term-line';
+      line.innerHTML = `<span class="err">git log: couldn't reach github.</span> <span class="dim">(${esc(err.message || 'offline')})</span>`;
+    }
+    print(' '); scrollDown();
+  }
+
   // ---------- tab completion ----------
   function complete() {
     const v = input.value, parts = v.split(/\s+/);
     let options = [], prefix = '';
     if (parts.length <= 1) {
       options = Object.keys(COMMANDS).filter(c => COMMANDS[c].help && c.startsWith(v.toLowerCase()));
+    } else if (parts[0] === 'git' && parts.length === 2) {
+      prefix = 'git '; options = ['log'].filter(o => o.startsWith(parts[1]));
     } else if (['open', 'cat'].includes(parts[0])) {
       prefix = parts[0] + ' ';
       const pool = parts[0] === 'open' ? PROJECTS.map(p => p.name).concat(Object.keys(LINKS)) : Object.keys(FILES);

@@ -74,3 +74,7 @@ Vercel Web Analytics (page views, countries, devices, referrers; no cookies). It
 ## Messages (terminal `message` command)
 Visitors type `message` in the terminal (or on the 404 page), answer name / email (optional) / message, confirm, and it's emailed to you via Web3Forms.
 To switch it on: go to web3forms.com, enter your email, copy the access key they email you, and paste it into `WEB3FORMS_KEY` near the top of `terminal.js`. The key is meant to be public; it can only send to your inbox.
+
+## GitHub activity
+- **"building" section** (main page): a year of GitHub contributions drawn as ink dots, with a hover tooltip. Data comes from the free github-contributions-api.jogruber.de; if it's down, the section hides itself.
+- **`git log`** (terminal): your latest public pushes, straight from GitHub's API.
