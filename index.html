@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+  // the Render copy forwards to the main site, keeping the same page (madhup.onrender.com/me → madhupbhardwaj.vercel.app/me)
+  if (location.hostname === 'madhup.onrender.com') location.replace('https://madhupbhardwaj.vercel.app' + location.pathname.replace(/\.html$/, '').replace(/^\/index$/, '/') + location.search + location.hash);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Madhup Bhardwaj</title>
 <meta name="description" content="Madhup Bhardwaj — high school student in India who loves mathematics and builds small tools around how he learns.">

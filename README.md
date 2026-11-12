@@ -21,7 +21,7 @@ Open `index.html` in a browser. That's it.
 
 ## Deploy
 
-The site lives at **https://madhupbhardwaj.vercel.app** (main) and **https://madhup.onrender.com** (copy). Both deploy automatically from this repo's `main` branch.
+The site lives at **https://madhupbhardwaj.vercel.app**. **https://madhup.onrender.com** still deploys from this repo but instantly forwards every page to the same page on the Vercel site (a small script at the top of each HTML file), so all visits are counted in Vercel Analytics.
 
 
 **Vercel:** push this folder to a GitHub repo, then in Vercel choose *Add New → Project*, import the repo, and set Framework Preset to **Other**. Leave the build command empty and click **Deploy**.
