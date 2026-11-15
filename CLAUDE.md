@@ -28,6 +28,7 @@ Madhup Bhardwaj's personal portfolio. Madhup is a high school student in India w
 - **/me:** plain prose with `<blockquote class="fill">` quotes that darken word by word as you scroll.
 - **/terminal** (and a working terminal on the 404 page): `terminal.js` `COMMANDS`, including `message`, `git log`, `cd`, `cat`/`ls`, `theme`, `sound`, `volume`.
 - Phone menu (a "menu" pill that opens a card), page view transitions, dark-mode favicon, clean URLs.
+- Tab title changes to "where'd you go?" when the visitor switches tabs, and "oh, you're back :)" briefly on return (all pages, `script.js`).
 
 ## Madhup's preferences (learned the hard way)
 - **Never invent facts about him.** Only use what he has said; if wording is added for flow, tell him.

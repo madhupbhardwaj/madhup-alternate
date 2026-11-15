@@ -434,6 +434,20 @@ function toggleSound() {
 soundText?.addEventListener('click', () => { toggleSound(); syncVolume(); });
 syncSoundLabel();
 
+/* ---------- Tab title when the visitor leaves ----------
+   Switching to another tab changes this tab's title to "where'd you go?";
+   coming back says "oh, you're back :)" for a moment, then restores it. */
+(() => {
+  const original = document.title;
+  let back;
+  document.addEventListener('visibilitychange', () => {
+    clearTimeout(back);
+    if (document.hidden) { document.title = "where'd you go?"; return; }
+    document.title = "oh, you're back :)";
+    back = setTimeout(() => { document.title = original; }, 1600);
+  });
+})();
+
 /* ---------- Phone menu ----------
    On small screens the text links in the top bar fold into a "menu" button
    that opens a card listing every page. Built from the existing nav links,

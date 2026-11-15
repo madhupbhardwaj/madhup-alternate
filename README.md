@@ -80,3 +80,4 @@ To switch it on: go to web3forms.com, enter your email, copy the access key they
 - **`git log`** (terminal): your latest public pushes, straight from GitHub's API.
 - **Maths in the terminal:** `calc <expr>` (safe calculator: + − × ÷ ^ % ! brackets, sqrt/abs/ln/log/sin/cos, pi/e), `prime <n>`, `factor <n>`, `fib <n>`, `gcd <a> <b>`.
 - **"tap for sound" hint:** on the home page, if sound is on but the browser is still blocking audio (e.g. after a reload), a small pill asks for a tap; it hides on the first click and retypes the subtitle.
+- **Tab title:** switching away from the site changes its tab to "where'd you go?"; coming back shows "oh, you're back :)" for a moment.
