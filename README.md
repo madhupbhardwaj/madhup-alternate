@@ -12,7 +12,7 @@ style.css     all styling; colours are the variables at the top
 script.js     typing effect, sound effects, clock, dark mode, tall-grass banner
 favicon.svg   tab icon
 og.png        the picture shown when the site is shared (WhatsApp, LinkedIn…)
-previews/     screenshots of each project, shown on hover (and as thumbnails on phones)
+previews/     screenshots of each project, shown on hover; previews/thumbs/ has small copies for phones
 404.html      "page not found" page
 ```
 
@@ -59,7 +59,7 @@ Commands without a `help` line still work but stay hidden from `help` (handy for
 The speaker icon opens a volume card: ten ink strokes, click or drag to set 0–10 (default 7), plus a mute button. It's remembered in the browser. In the terminal, `volume 0-10` does the same.
 
 ## Little details
-- **Project previews:** `previews/<name>.webp` (720×450) are screenshots of each project. If a project's look changes, replace its file with a new screenshot of the same name.
+- **Project previews:** `previews/<name>.webp` (720×450) are screenshots of each project. If a project's look changes, replace its file with a new screenshot of the same name, and also a 240×150 copy in `previews/thumbs/` (used on phones).
 - **Share card:** `og.png` (1200×630). The share tags in each page point to `https://madhupbhardwaj.vercel.app` (the main address); if that changes, update those tags and the address printed on `og.png`.
 - **Avatar moods:** eyes close while sound is muted, get sleepy from 11pm to 6am India time (with floating z's), and go wide if you click the avatar three times quickly.
 - **Grass through the day:** morning dew (5–8am), plain daylight, sunset glow (5–7:30pm) and fireflies at night, all on India time. To preview one, add `?t=dawn`, `?t=day`, `?t=dusk` or `?t=night` to the address.

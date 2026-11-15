@@ -823,9 +823,9 @@ if ($('face')) trackEyes($('face'));
   };
   // phones: thumbnail in each row
   rows.forEach(a => {
-    const { src, label } = info(a);
+    const { name } = info(a);
     const t = document.createElement('img');
-    t.className = 'p-thumb'; t.src = src; t.alt = ''; t.loading = 'lazy'; t.decoding = 'async';
+    t.className = 'p-thumb'; t.src = `/previews/thumbs/${name}.webp`; t.alt = ''; t.loading = 'lazy'; t.decoding = 'async';
     t.setAttribute('aria-hidden', 'true');
     a.appendChild(t);
   });

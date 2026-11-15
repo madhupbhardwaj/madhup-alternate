@@ -38,5 +38,12 @@ Madhup Bhardwaj's personal portfolio. Madhup is a high school student in India w
 - Explain things simply; he isn't a developer. Give dashboard steps (Render, Vercel, Web3Forms) as numbered clicks.
 - Keep the downloadable zip in sync when asked (`/home/user/madhup-portfolio.zip` in the old session; regenerate from the repo).
 
+## Speed and accessibility (Lighthouse, Nov 2026)
+- Scores after the audit: home 99/100/100/100, /me 98/95, /terminal and 404 97/100 (404's SEO 60 is the intended `noindex`; /me's 95 is the faded words in quote fills, which are decorative and `aria-hidden`).
+- `--muted` grey is #6f6f69 (light) and #85857f (dark) so small text passes 4.5:1 contrast.
+- `script.js` loads with `defer` on index and me; NOT on terminal and 404, where it made the page slower (the terminal is drawn by script).
+- Phone thumbnails come from `previews/thumbs/` (240×150). Terminal dots have a 24px tap area. Google Fonts CSS stays render-blocking on purpose (avoids a flash of fallback fonts).
+- `vercel.json` caches previews, og.png and icons for a day.
+
 ## Ideas suggested but not built yet
-Maths terminal commands (calc, prime, factor, fib, problem), problem of the day, a "currently" line, JEE countdown, a ⌘K command menu, a lab page of maths demos, a papers section, a Konami easter egg, shortening the main-page about (it overlaps /me), a "tap for sound" hint after reloads, and a Lighthouse audit.
+Maths terminal commands (calc, prime, factor, fib, problem), problem of the day, a "currently" line, JEE countdown, a ⌘K command menu, a lab page of maths demos, a papers section, a Konami easter egg, shortening the main-page about (it overlaps /me), and a "tap for sound" hint after reloads.
