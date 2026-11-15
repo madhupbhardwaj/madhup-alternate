@@ -46,4 +46,6 @@ Madhup Bhardwaj's personal portfolio. Madhup is a high school student in India w
 - `vercel.json` caches previews, og.png and icons for a day.
 
 ## Ideas suggested but not built yet
-Maths terminal commands (calc, prime, factor, fib, problem), problem of the day, a "currently" line, JEE countdown, a ⌘K command menu, a lab page of maths demos, a papers section, a Konami easter egg, shortening the main-page about (it overlaps /me), and a "tap for sound" hint after reloads.
+Problem of the day (and a `problem` terminal command), a "currently" line, JEE countdown, a ⌘K command menu, a lab page of maths demos, a papers section, a Konami easter egg.
+
+Done since: maths terminal commands (calc/prime/factor/fib/gcd), the main-page about shortened to one paragraph + "read the long version →", and the "tap for sound" hint (`#soundHint`, home page only, uses `sfx.blocked`).

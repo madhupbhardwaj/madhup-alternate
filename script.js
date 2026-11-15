@@ -129,6 +129,7 @@ const sfx = (() => {
   return {
     unlock,
     get volume() { return level; },
+    get blocked() { return !ctx || ctx.state !== 'running'; },   // browser hasn't let us play yet
     setVolume(l) {
       level = Math.min(10, Math.max(0, Math.round(l)));
       store.set('volume', String(level));
@@ -473,6 +474,33 @@ syncSoundLabel();
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !card.hidden) { open(false); btn.focus(); } });
   addEventListener('resize', () => { if (innerWidth > 640 && !card.hidden) open(false); });
   addEventListener('scroll', () => { if (!card.hidden) open(false); }, { passive: true });
+})();
+
+/* ---------- "tap for sound" hint ----------
+   Returning visitors skip the welcome screen, so after a reload the browser is
+   still blocking audio. If sound is on but blocked, a small pill says so; the
+   first click/tap/key hides it and retypes the subtitle so they hear it. */
+(() => {
+  const hint = $('soundHint');
+  if (!hint) return;
+  let shown = false;
+  function dismiss() {
+    if (!shown) return;
+    shown = false;
+    hint.classList.add('out');
+    setTimeout(() => { hint.hidden = true; }, 320);
+    const t = $('typed');
+    if (t && t.getBoundingClientRect().bottom > 0 && t.getBoundingClientRect().top < innerHeight)
+      setTimeout(() => retype(t, 60), 250);
+  }
+  setTimeout(() => {
+    const welcome = $('welcome');
+    if (welcome && !welcome.hidden) return;              // first visit: the welcome screen handles it
+    if (root.dataset.sound === 'off' || sfx.volume === 0 || !sfx.blocked) return;
+    hint.hidden = false; shown = true;
+    ['pointerdown', 'keydown', 'touchstart'].forEach(e => addEventListener(e, () => setTimeout(dismiss, 50), { once: true, passive: true }));
+    setTimeout(dismiss, 12000);                          // don't nag
+  }, 1800);
 })();
 
 /* ---------- Volume card ----------

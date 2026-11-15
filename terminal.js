@@ -114,6 +114,39 @@
       if (sub !== 'log') return html('usage: <span class="g">git log</span> <span class="dim">(shows what i pushed to github lately)</span>');
       gitLog(); return null;
     } },
+    calc:     { help: 'do some maths', args: '<expr>', run: args => {
+      const src = args.join(' ');
+      if (!src) return html('usage: calc 2^10 / 3   <span class="dim">(+ − × ÷ ^ %, brackets, sqrt, abs, pi, e)</span>');
+      try { const v = calc(src); return html(`<span class="dim">${esc(src)} =</span> <span class="hl">${esc(fmtNum(v))}</span>`); }
+      catch (e) { return html(`<span class="err">calc: ${esc(e.message)}</span>`); }
+    } },
+    prime:    { help: 'is it prime?', args: '<n>', run: ([n]) => {
+      const v = Number(n);
+      if (!Number.isInteger(v) || v < 0 || v > 1e15) return 'prime: give me a whole number (up to 15 digits).';
+      if (v < 2) return `${v} is not prime (primes start at 2).`;
+      const f = smallestFactor(v);
+      return f === v ? html(`<span class="g">${v} is prime.</span>`) : `${v} is not prime: it's divisible by ${f}.`;
+    } },
+    factor:   { help: 'prime factorisation', args: '<n>', run: ([n]) => {
+      const v = Number(n);
+      if (!Number.isInteger(v) || v < 2 || v > 1e15) return 'factor: give me a whole number from 2 up (to 15 digits).';
+      const fs = factorise(v), groups = [];
+      fs.forEach(p => { const g = groups[groups.length - 1]; g && g[0] === p ? g[1]++ : groups.push([p, 1]); });
+      return html(`${v} = ${groups.map(([p, k]) => k > 1 ? `${p}<sup>${k}</sup>` : p).join(' × ')}` + (fs.length === 1 ? ' <span class="dim">(prime)</span>' : ''));
+    } },
+    fib:      { help: 'fibonacci numbers', args: '<n>', run: ([n]) => {
+      const v = Number(n);
+      if (!Number.isInteger(v) || v < 1 || v > 300) return 'fib: how many? (1 to 300)';
+      let a = 0n, b = 1n; const out = [];
+      for (let i = 0; i < v; i++) { out.push(b.toString()); [a, b] = [b, a + b]; }
+      return v <= 30 ? out.join(', ') : `${out.slice(0, 10).join(', ')} … ${out[v - 1]}\n(the ${v}th fibonacci number has ${out[v - 1].length} digits)`;
+    } },
+    gcd:      { help: 'gcd and lcm', args: '<a> <b>', run: ([a, b]) => {
+      const x = Number(a), y = Number(b);
+      if (![x, y].every(v => Number.isInteger(v) && v > 0 && v <= 1e15)) return 'gcd: give me two positive whole numbers.';
+      const g = gcd(x, y), l = (x / g) * y;
+      return `gcd(${x}, ${y}) = ${g}\nlcm(${x}, ${y}) = ${fmtNum(l)}`;
+    } },
     message:  { help: 'send me a message',          run: () => { startMessage(); return null; } },
     clear:    { help: 'clear the screen',             run: () => { out.innerHTML = ''; return null; } },
     me:       { help: 'go to the "me" page',          run: () => { go('/me'); return 'going to /me…'; } },
@@ -296,6 +329,63 @@
       line.innerHTML = `<span class="err">git log: couldn't reach github.</span> <span class="dim">(${esc(err.message || 'offline')})</span>`;
     }
     print(' '); scrollDown();
+  }
+
+  // ---------- maths helpers ----------
+  const fmtNum = v => Number.isInteger(v) ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : String(+v.toPrecision(12));
+  const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+  function smallestFactor(n) {
+    if (n % 2 === 0) return 2;
+    for (let i = 3; i * i <= n; i += 2) if (n % i === 0) return i;
+    return n;
+  }
+  function factorise(n) { const out = []; while (n > 1) { const f = smallestFactor(n); out.push(f); n /= f; } return out; }
+  // a tiny safe calculator: numbers, + - * / ^ %, brackets, a few functions and constants. No eval.
+  function calc(src) {
+    const s = src.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\*\*/g, '^');
+    let i = 0;
+    const peek = () => s[i], skip = () => { while (s[i] === ' ') i++; };
+    const FN = { sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, ln: Math.log, log: Math.log10, sin: Math.sin, cos: Math.cos, tan: Math.tan, floor: Math.floor, ceil: Math.ceil, round: Math.round, exp: Math.exp };
+    const CONST = { pi: Math.PI, e: Math.E, tau: 2 * Math.PI };
+    function number() {
+      skip();
+      const m = /^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(s.slice(i));
+      if (m) { i += m[0].length; return parseFloat(m[0]); }
+      const w = /^[a-z]+/i.exec(s.slice(i));
+      if (w) {
+        i += w[0].length; const name = w[0].toLowerCase(); skip();
+        if (s[i] === '(' && FN[name]) { i++; const v = expr(); skip(); if (s[i] !== ')') throw new Error('missing )'); i++; return FN[name](v); }
+        if (name in CONST) return CONST[name];
+        throw new Error(`i don't know "${w[0]}"`);
+      }
+      if (s[i] === '(') { i++; const v = expr(); skip(); if (s[i] !== ')') throw new Error('missing )'); i++; return v; }
+      if (s[i] === '-') { i++; return -factor(); }
+      if (s[i] === '+') { i++; return factor(); }
+      throw new Error(i >= s.length ? 'the expression ends early' : `unexpected "${s[i]}"`);
+    }
+    function factor() {
+      let v = number(); skip();
+      while (s[i] === '!') { i++; if (!Number.isInteger(v) || v < 0 || v > 170) throw new Error('factorial needs a whole number up to 170'); let r = 1; for (let k = 2; k <= v; k++) r *= k; v = r; skip(); }
+      if (s[i] === '^') { i++; return Math.pow(v, factor()); }   // right-associative
+      return v;
+    }
+    function term() {
+      let v = factor(); skip();
+      while ('*/%'.includes(s[i]) && s[i]) {
+        const op = s[i++]; const r = factor(); skip();
+        if (op === '*') v *= r; else if (op === '/') { if (r === 0) throw new Error('division by zero'); v /= r; } else v %= r;
+      }
+      return v;
+    }
+    function expr() {
+      let v = term(); skip();
+      while ((s[i] === '+' || s[i] === '-') && s[i]) { const op = s[i++]; const r = term(); skip(); v = op === '+' ? v + r : v - r; }
+      return v;
+    }
+    const v = expr(); skip();
+    if (i < s.length) throw new Error(`unexpected "${s[i]}"`);
+    if (!Number.isFinite(v)) throw new Error('that got too big');
+    return v;
   }
 
   // ---------- tab completion ----------

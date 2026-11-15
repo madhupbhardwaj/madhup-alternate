@@ -472,3 +472,20 @@ h2[data-type] { cursor: default; -webkit-tap-highlight-color: transparent; }
   .menu-card a[aria-current="page"] .mt { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
   .menu-card hr { border: 0; border-top: 1px dotted var(--line); margin: 4px 12px; }
 }
+
+/* ---------- "read the long version" ---------- */
+.body .more { margin-top: 14px; font: 13px var(--mono); }
+
+/* ---------- "tap for sound" hint (returning visitors, audio still blocked) ---------- */
+.sound-hint {
+  position: fixed; left: 50%; bottom: 22px; z-index: 40; transform: translateX(-50%);
+  font-size: 12px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; box-shadow: 0 10px 30px -14px rgba(0,0,0,.35); pointer-events: none; white-space: nowrap;
+  animation: shIn .4s cubic-bezier(.3,1.5,.5,1) both;
+}
+.sound-hint[hidden] { display: none; }
+.sound-hint.out { animation: shOut .3s ease both; }
+.sh-touch { display: none; }
+@media (hover: none) { .sh-mouse { display: none; } .sh-touch { display: inline; } }
+@keyframes shIn { from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.95); } }
+@keyframes shOut { to { opacity: 0; transform: translateX(-50%) translateY(8px); } }
