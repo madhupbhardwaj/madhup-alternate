@@ -433,6 +433,48 @@ function toggleSound() {
 soundText?.addEventListener('click', () => { toggleSound(); syncVolume(); });
 syncSoundLabel();
 
+/* ---------- Phone menu ----------
+   On small screens the text links in the top bar fold into a "menu" button
+   that opens a card listing every page. Built from the existing nav links,
+   so it stays in sync on every page. */
+(() => {
+  const links = document.querySelector('.nav-links'), inner = document.querySelector('.nav-inner');
+  if (!links || !inner) return;
+  const pages = [...links.querySelectorAll(':scope > a:not(.icon-btn)')];
+  const term = links.querySelector('a[href="/terminal"]');
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'menu-btn'; btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', 'menuCard');
+  btn.innerHTML = '<i aria-hidden="true"></i>menu';
+  links.insertBefore(btn, links.querySelector('.sep'));
+  const card = document.createElement('div');
+  card.className = 'menu-card'; card.id = 'menuCard'; card.hidden = true;
+  const here = location.pathname.replace(/\/$/, '') || '/';
+  const row = (a, n, hint) => {
+    const el = document.createElement('a');
+    el.href = a.getAttribute('href'); el.dataset.sfx = '';
+    const path = el.getAttribute('href');
+    if (path === here || a.getAttribute('aria-current') === 'page') el.setAttribute('aria-current', 'page');
+    el.innerHTML = `<span class="mn">${n}</span><span class="mt"></span>${hint ? `<span class="mh">${hint}</span>` : ''}`;
+    el.querySelector('.mt').textContent = a.textContent.trim() || hint;
+    return el;
+  };
+  card.append(row({ getAttribute: k => k === 'href' ? '/' : null, textContent: 'home' }, '00'));
+  pages.forEach((a, i) => card.append(row(a, String(i + 1).padStart(2, '0'))));
+  if (term) { card.append(document.createElement('hr')); const t = row(term, '>_'); t.querySelector('.mt').textContent = 'terminal'; card.append(t); }
+  inner.appendChild(card);
+
+  function open(show) {
+    card.hidden = !show; btn.setAttribute('aria-expanded', String(show));
+    if (show) { card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); sfx.bubble(3); }
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); sfx.unlock(); open(card.hidden); });
+  card.addEventListener('click', e => { if (e.target.closest('a')) open(false); });
+  document.addEventListener('pointerdown', e => { if (!card.hidden && !card.contains(e.target) && !btn.contains(e.target)) open(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !card.hidden) { open(false); btn.focus(); } });
+  addEventListener('resize', () => { if (innerWidth > 640 && !card.hidden) open(false); });
+  addEventListener('scroll', () => { if (!card.hidden) open(false); }, { passive: true });
+})();
+
 /* ---------- Volume card ----------
    The speaker icon opens a small card: ten ink strokes (like the grass
    banner) rising in height. Click or drag across them to set the volume;
