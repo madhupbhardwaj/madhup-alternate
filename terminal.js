@@ -21,6 +21,7 @@
   const PROJECTS = [
     { name: 'problemset',   url: 'https://problemset.in',                desc: 'practice problems, sorted by topic: number theory to calculus.' },
     { name: 'problemslate', url: 'https://problemslate.vercel.app',      desc: 'a focused, pen-first whiteboard for macos and windows.' },
+    { name: 'thockey',      url: 'https://thockey.vercel.app',           desc: 'a tiny mac menu bar app that plays a satisfying sound every time you press a key.' },
     { name: 'mypapers',     url: 'https://mypapers-madhup.vercel.app',   desc: 'papers, proofs, and ideas: my mathematical writing.' },
     { name: 'classroll',    url: 'https://classroll-sigma.vercel.app',   desc: 'attendance without the paper trail. scan a qr, enter your pin, done.' },
     { name: 'tenbars',      url: 'https://tenbars.vercel.app',           desc: 'find tv series and rate every episode out of ten.' },
